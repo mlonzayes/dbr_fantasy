@@ -11,6 +11,7 @@ interface Player {
   name: string
   position: string
   totalPoints: number
+  currentPrice: number
 }
 
 export default function DraftPage() {
@@ -85,8 +86,8 @@ export default function DraftPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full bg-gray-50 flex-1">
+      <div className="max-w-7xl mx-auto px-4 py-8 w-full">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Draft — Armá tu equipo</h1>
         <p className="text-gray-500 text-sm mb-6">
           Seleccioná exactamente 15 jugadores para tu equipo.

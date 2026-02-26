@@ -58,7 +58,7 @@ export default function AdminUploadForm() {
             accept=".xlsx"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             required
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-light file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100"
           />
         </div>
         <div className="w-full sm:w-40">
@@ -80,13 +80,13 @@ export default function AdminUploadForm() {
       <button
         type="submit"
         disabled={!file || loading}
-        className="bg-green-700 text-white px-6 py-2 rounded-lg font-semibold text-sm disabled:opacity-40 hover:bg-green-800 transition-colors"
+        className="bg-slate-900 text-white px-6 py-2 rounded font-light text-sm disabled:opacity-40 hover:bg-slate-800 transition-colors"
       >
         {loading ? "Subiendo..." : "Subir puntos"}
       </button>
 
       {result && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-slate-50 border border-slate-200 rounded p-4 text-sm font-light">
           <p className="text-green-800 font-medium">
             ✓ {result.processed} jugadores procesados — Semana {result.week}/{result.year}
           </p>

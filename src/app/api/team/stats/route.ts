@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
+import { isTransferWindowOpen } from "@/lib/transferWindow"
 
 export async function GET() {
   const { userId } = await auth()
@@ -21,5 +22,15 @@ export async function GET() {
     },
   })
 
-  return NextResponse.json(team)
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { balance: true }
+  })
+
+  // Return structure matching TeamStatsResponse in the UI
+  return NextResponse.json({
+    team,
+    user: user ? { balance: user.balance } : null,
+    isLocked: !isTransferWindowOpen()
+  })
 }

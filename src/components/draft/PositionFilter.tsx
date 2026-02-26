@@ -26,11 +26,10 @@ export default function PositionFilter({ selected, onSelect }: PositionFilterPro
         <button
           key={pos}
           onClick={() => onSelect(pos)}
-          className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-            selected === pos
-              ? "bg-green-700 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+          className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${selected === pos
+              ? "bg-slate-900 text-white font-medium"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
         >
           {pos}
         </button>

@@ -2,8 +2,7 @@ import Link from "next/link"
 import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { clerkClient } from "@clerk/nextjs/server"
-import Navbar from "@/components/Navbar"
-
+import { FaTrophy, FaMedal, FaArrowRight } from "react-icons/fa"
 async function getRanking() {
   const teams = await prisma.team.findMany({
     include: {
@@ -73,65 +72,70 @@ export default async function HomePage() {
     : 0
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <div className="text-center mb-10 sm:mb-16">
+        <h1 className="text-3xl sm:text-4xl font-light text-slate-900 tracking-wide flex flex-col items-center justify-center gap-1">
+          Rugby Fantasy
+          <span className="text-red-600 font-semibold text-xl sm:text-2xl tracking-normal">Don Bosco Rugby</span>
+        </h1>
+        <p className="text-slate-500 mt-4 text-sm font-light">Armá tu equipo, seguí los puntos, ganá el ranking.</p>
+      </div>
 
-      <main className="max-w-3xl mx-auto px-4 py-10">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-green-800 mb-2">Rugby Fantasy</h1>
-          <p className="text-gray-500">Armá tu equipo, seguí los puntos, ganá el ranking.</p>
+      {userId && !userTeam && (
+        <div className="bg-white border border-slate-200 rounded p-10 mb-12 text-center shadow-sm relative overflow-hidden">
+          <div className="absolute -top-4 -right-4 p-4 text-slate-100"><FaTrophy size={120} /></div>
+          <p className="text-lg font-light text-slate-800 mb-6 relative z-10">Aún no tenés un equipo armado.</p>
+          <Link
+            href="/draft"
+            className="inline-flex items-center gap-2 bg-slate-950 text-white px-8 py-2.5 rounded text-sm font-light hover:bg-slate-800 transition-colors relative z-10"
+          >
+            Armar Equipo
+          </Link>
         </div>
+      )}
 
-        {userId && !userTeam && (
-          <div className="bg-green-700 text-white rounded-xl p-6 mb-8 text-center">
-            <p className="text-lg font-semibold mb-3">Todavía no tenés equipo!</p>
-            <Link
-              href="/draft"
-              className="bg-white text-green-800 px-6 py-2 rounded-lg font-bold hover:bg-green-50 transition-colors"
-            >
-              Armar mi equipo
-            </Link>
+      {userId && userTeam && userPosition && (
+        <div className="bg-white border border-slate-200 rounded p-6 mb-12 flex items-center justify-between shadow-sm">
+          <div>
+            <p className="font-medium text-slate-900 text-base">
+              {userTeam.name}
+            </p>
+            <p className="text-sm font-light text-slate-500 mt-1">{userTotalPoints} <span className="text-red-600">pts</span></p>
           </div>
-        )}
-
-        {userId && userTeam && userPosition && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5 mb-8 flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-green-900">{userTeam.name}</p>
-              <p className="text-sm text-green-700">{userTotalPoints} puntos</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-green-800">#{userPosition}</p>
-              <p className="text-xs text-gray-500">tu posicion</p>
-            </div>
+          <div className="text-right">
+            <p className="text-2xl font-light text-slate-900 flex items-center justify-end gap-2">
+              #{userPosition} <FaMedal className="text-slate-300 text-lg" />
+            </p>
           </div>
-        )}
+        </div>
+      )}
 
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Top 10</h2>
+      <h2 className="text-lg font-light text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-2">Top 10</h2>
 
-        {ranking.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            Todavia no hay equipos.
-          </p>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+      {ranking.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">
+          Todavia no hay equipos.
+        </p>
+      ) : (
+        <div className="bg-white rounded border border-slate-200 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm min-w-[500px]">
               <thead>
-                <tr className="bg-green-700 text-white">
-                  <th className="px-4 py-3 text-center font-semibold w-12">#</th>
-                  <th className="px-4 py-3 text-left font-semibold">Equipo</th>
-                  <th className="px-4 py-3 text-left font-semibold">Dueno</th>
-                  <th className="px-4 py-3 text-right font-semibold">Puntos</th>
+                <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 font-light text-xs uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left font-light w-16">#</th>
+                  <th className="px-6 py-4 text-left font-light">Equipo</th>
+                  <th className="px-6 py-4 text-left font-light">Dueño</th>
+                  <th className="px-6 py-4 text-right font-light">Pts</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="font-light">
                 {ranking.map((entry: any) => (
                   <tr
                     key={entry.userId}
-                    className={`border-t border-gray-100 ${entry.userId === userId ? "bg-green-50 font-semibold" : "hover:bg-gray-50"
+                    className={`border-b border-slate-50 last:border-0 transition-colors ${entry.userId === userId ? "bg-slate-50 font-normal text-slate-900" : "hover:bg-slate-50 text-slate-600"
                       }`}
                   >
-                    <td className="px-4 py-3 text-center text-gray-500">
+                    <td className="px-6 py-4 text-slate-400">
                       {entry.position === 1
                         ? "1"
                         : entry.position === 2
@@ -140,9 +144,9 @@ export default async function HomePage() {
                             ? "3"
                             : entry.position}
                     </td>
-                    <td className="px-4 py-3">{entry.teamName}</td>
-                    <td className="px-4 py-3 text-gray-600">{entry.ownerName}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-green-700">
+                    <td className="px-6 py-4 text-slate-800">{entry.teamName}</td>
+                    <td className="px-6 py-4 text-slate-500">{entry.ownerName}</td>
+                    <td className="px-6 py-4 text-right text-red-600">
                       {entry.totalPoints}
                     </td>
                   </tr>
@@ -150,16 +154,16 @@ export default async function HomePage() {
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
-        {ranking.length > 0 && (
-          <div className="text-center mt-4">
-            <Link href="/ranking" className="text-green-700 text-sm hover:underline font-medium">
-              Ver ranking completo
-            </Link>
-          </div>
-        )}
-      </main>
+      {ranking.length > 0 && (
+        <div className="text-center mt-8">
+          <Link href="/ranking" className="inline-flex items-center gap-2 text-slate-500 text-xs hover:text-slate-900 transition-colors uppercase tracking-widest">
+            Ver ranking completo <FaArrowRight />
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

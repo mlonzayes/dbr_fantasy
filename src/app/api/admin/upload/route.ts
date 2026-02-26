@@ -48,21 +48,51 @@ export async function POST(req: Request) {
 
       if (existing) {
         // Corregir total acumulado: restar lo viejo, sumar lo nuevo
+        const pointDiff = row.points - existing.points
+        const priceBump = Math.floor(pointDiff / 2)
+
+        const currentPlayer = await prisma.player.findUnique({ where: { id: playerId } })
+        let newPrice = (currentPlayer?.currentPrice || 50) + priceBump
+        if (newPrice < 1) newPrice = 1
+        if (newPrice > 150) newPrice = 150
+        const actualChange = newPrice - (currentPlayer?.currentPrice || 50)
+
         await prisma.player.update({
           where: { id: playerId },
-          data: { totalPoints: { increment: row.points - existing.points } },
+          data: {
+            totalPoints: { increment: pointDiff },
+            currentPrice: newPrice
+          },
         })
         await prisma.weeklyStat.update({
           where: { playerId_week_year: { playerId, week, year } },
-          data: { points: row.points },
+          data: {
+            points: row.points,
+            priceChange: { increment: actualChange }
+          },
         })
       } else {
+        const priceBump = Math.floor(row.points / 2) // Base logic
+        let newPrice = 50 + priceBump // Fallback logic assuming start 50
+
+        const currentPlayer = await prisma.player.findUnique({ where: { id: playerId } })
+        if (currentPlayer) {
+          newPrice = currentPlayer.currentPrice + priceBump
+        }
+
+        if (newPrice < 1) newPrice = 1
+        if (newPrice > 150) newPrice = 150
+        const actualChange = newPrice - (currentPlayer?.currentPrice || 50)
+
         await prisma.weeklyStat.create({
-          data: { playerId, week, year, points: row.points },
+          data: { playerId, week, year, points: row.points, priceChange: actualChange },
         })
         await prisma.player.update({
           where: { id: playerId },
-          data: { totalPoints: { increment: row.points } },
+          data: {
+            totalPoints: { increment: row.points },
+            currentPrice: newPrice
+          },
         })
       }
 

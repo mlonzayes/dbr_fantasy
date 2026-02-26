@@ -12,6 +12,7 @@ datasource db {
 model User {
   id        String   @id          // clerk user id: "user_xxx"
   isAdmin   Boolean  @default(false)
+  balance   Int      @default(1250) // Starting budget
   createdAt DateTime @default(now())
   team      Team?
 }
@@ -21,6 +22,8 @@ model Player {
   name        String
   position    String       // Pilar, Hooker, Segunda línea, Ala, N°8, Medio scrum, Apertura, Centro, Wing, Full
   totalPoints Int          @default(0)
+  basePrice   Int          @default(50)
+  currentPrice Int         @default(50)
   weeklyStats WeeklyStat[]
   teamPlayers TeamPlayer[]
 }
@@ -46,8 +49,9 @@ model WeeklyStat {
   id       Int    @id @default(autoincrement())
   playerId Int
   week     Int
-  year     Int
-  points   Int
+  year        Int
+  points      Int
+  priceChange Int    @default(0)
   player   Player @relation(fields: [playerId], references: [id])
   @@unique([playerId, week, year])
 }

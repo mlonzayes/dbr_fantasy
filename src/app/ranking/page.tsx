@@ -45,7 +45,7 @@ export default function RankingPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-green-700 text-white">
+                <tr className="bg-slate-50 text-slate-500 font-light text-xs uppercase tracking-wider">
                   <th className="px-4 py-3 text-center font-semibold w-12">#</th>
                   <th className="px-4 py-3 text-left font-semibold">Equipo</th>
                   <th className="px-4 py-3 text-left font-semibold">Dueño</th>
@@ -58,18 +58,17 @@ export default function RankingPage() {
                   return (
                     <tr
                       key={entry.userId}
-                      className={`border-t border-gray-100 ${
-                        isMe ? "bg-green-50 font-semibold" : "hover:bg-gray-50"
-                      }`}
+                      className={`border-t border-gray-100 ${isMe ? "bg-slate-50 font-normal text-slate-900" : "hover:bg-slate-50 text-slate-600"
+                        }`}
                     >
                       <td className="px-4 py-3 text-center text-gray-500 font-medium">
                         {entry.position === 1
                           ? "🥇"
                           : entry.position === 2
-                          ? "🥈"
-                          : entry.position === 3
-                          ? "🥉"
-                          : entry.position}
+                            ? "🥈"
+                            : entry.position === 3
+                              ? "🥉"
+                              : entry.position}
                       </td>
                       <td className="px-4 py-3">
                         {entry.teamName}
