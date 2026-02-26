@@ -8,7 +8,6 @@ import {
   SignedOut,
 } from "@clerk/nextjs"
 import Link from "next/link"
-import Image from "next/image"
 import { FaTrophy, FaShieldAlt, FaUsers, FaSignInAlt, FaBars, FaTimes } from "react-icons/fa"
 
 export default function Navbar({ adminLink }: { adminLink: React.ReactNode }) {
@@ -17,13 +16,6 @@ export default function Navbar({ adminLink }: { adminLink: React.ReactNode }) {
   return (
     <nav className="relative z-50 rounded-b-xl flex items-center justify-between px-6 py-5 bg-slate-950 border-b border-red-600/50 text-white shadow-xl">
       <Link href="/" className="relative z-50 text-xl font-medium tracking-wide flex items-center gap-3">
-        <Image
-          src="/icon.png"
-          alt="Don Bosco Logo"
-          width={40}
-          height={40}
-          className="object-contain saturate-[3] brightness-0 invert"
-        />
         <span className="relative z-10 font-bold tracking-widest uppercase">
           <span className="hidden sm:inline">DBR Fantasy</span>
           <span className="sm:hidden text-lg">DBR</span>
