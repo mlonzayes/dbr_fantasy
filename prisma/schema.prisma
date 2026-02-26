@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// El User se sincroniza desde Clerk via webhook
+// El ID es el clerkId (user_xxx)
+model User {
+  id        String   @id          // clerk user id: "user_xxx"
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  team      Team?
+}
+
+model Player {
+  id          Int          @id @default(autoincrement())
+  name        String
+  position    String       // Pilar, Hooker, Segunda línea, Ala, N°8, Medio scrum, Apertura, Centro, Wing, Full
+  totalPoints Int          @default(0)
+  weeklyStats WeeklyStat[]
+  teamPlayers TeamPlayer[]
+}
+
+model Team {
+  id        String       @id @default(cuid())
+  name      String
+  userId    String       @unique
+  user      User         @relation(fields: [userId], references: [id])
+  players   TeamPlayer[]
+  createdAt DateTime     @default(now())
+}
+
+model TeamPlayer {
+  teamId   String
+  playerId Int
+  team     Team   @relation(fields: [teamId], references: [id])
+  player   Player @relation(fields: [playerId], references: [id])
+  @@id([teamId, playerId])
+}
+
+model WeeklyStat {
+  id       Int    @id @default(autoincrement())
+  playerId Int
+  week     Int
+  year     Int
+  points   Int
+  player   Player @relation(fields: [playerId], references: [id])
+  @@unique([playerId, week, year])
+}
