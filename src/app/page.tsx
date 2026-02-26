@@ -13,7 +13,7 @@ async function getRanking() {
     },
   })
 
-  const userIds = teams.map((t) => t.userId)
+  const userIds = teams.map((t: any) => t.userId)
   if (userIds.length === 0) return []
 
   const clerk = await clerkClient()
@@ -22,21 +22,21 @@ async function getRanking() {
     usersResponse.data.map((u) => [
       u.id,
       [u.firstName, u.lastName].filter(Boolean).join(" ") ||
-        u.emailAddresses[0]?.emailAddress ||
-        "Usuario",
+      u.emailAddresses[0]?.emailAddress ||
+      "Usuario",
     ])
   )
 
   return teams
-    .map((team) => ({
+    .map((team: any) => ({
       teamName: team.name,
       ownerName: userMap[team.userId] ?? "Usuario",
-      totalPoints: team.players.reduce((sum, tp) => sum + tp.player.totalPoints, 0),
+      totalPoints: team.players.reduce((sum: any, tp: any) => sum + tp.player.totalPoints, 0),
       userId: team.userId,
     }))
-    .sort((a, b) => b.totalPoints - a.totalPoints)
+    .sort((a: any, b: any) => b.totalPoints - a.totalPoints)
     .slice(0, 10)
-    .map((team, index) => ({ ...team, position: index + 1 }))
+    .map((team: any, index: any) => ({ ...team, position: index + 1 }))
 }
 
 export default async function HomePage() {
@@ -59,17 +59,17 @@ export default async function HomePage() {
         include: { players: { include: { player: { select: { totalPoints: true } } } } },
       })
       const sorted = allTeams
-        .map((t) => ({
+        .map((t: any) => ({
           userId: t.userId,
-          pts: t.players.reduce((s, tp) => s + tp.player.totalPoints, 0),
+          pts: t.players.reduce((s: any, tp: any) => s + tp.player.totalPoints, 0),
         }))
-        .sort((a, b) => b.pts - a.pts)
-      userPosition = sorted.findIndex((t) => t.userId === userId) + 1
+        .sort((a: any, b: any) => b.pts - a.pts)
+      userPosition = sorted.findIndex((t: any) => t.userId === userId) + 1
     }
   }
 
   const userTotalPoints = userTeam
-    ? userTeam.players.reduce((sum, tp) => sum + tp.player.totalPoints, 0)
+    ? userTeam.players.reduce((sum: any, tp: any) => sum + tp.player.totalPoints, 0)
     : 0
 
   return (
@@ -125,21 +125,20 @@ export default async function HomePage() {
                 </tr>
               </thead>
               <tbody>
-                {ranking.map((entry) => (
+                {ranking.map((entry: any) => (
                   <tr
                     key={entry.userId}
-                    className={`border-t border-gray-100 ${
-                      entry.userId === userId ? "bg-green-50 font-semibold" : "hover:bg-gray-50"
-                    }`}
+                    className={`border-t border-gray-100 ${entry.userId === userId ? "bg-green-50 font-semibold" : "hover:bg-gray-50"
+                      }`}
                   >
                     <td className="px-4 py-3 text-center text-gray-500">
                       {entry.position === 1
                         ? "1"
                         : entry.position === 2
-                        ? "2"
-                        : entry.position === 3
-                        ? "3"
-                        : entry.position}
+                          ? "2"
+                          : entry.position === 3
+                            ? "3"
+                            : entry.position}
                     </td>
                     <td className="px-4 py-3">{entry.teamName}</td>
                     <td className="px-4 py-3 text-gray-600">{entry.ownerName}</td>
