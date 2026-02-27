@@ -15,11 +15,33 @@ export async function POST(req: Request) {
     const buffer = await file.arrayBuffer()
     const workbook = XLSX.read(buffer)
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    const rows = XLSX.utils.sheet_to_json(sheet) as Array<{
-        name: string
-        position: string
-        price: number
-    }>
+    const POSITION_MAP: Record<string, string> = {
+        "segunda linea": "Segunda línea",
+        "segunda línea": "Segunda línea",
+        "full back": "Full",
+        "fullback": "Full",
+        "full": "Full",
+        "medio scrum": "Medio scrum",
+        "pilar": "Pilar",
+        "hooker": "Hooker",
+        "ala": "Ala",
+        "n°8": "N°8",
+        "apertura": "Apertura",
+        "centro": "Centro",
+        "wing": "Wing",
+    }
+
+    const rawRows = XLSX.utils.sheet_to_json(sheet) as Array<Record<string, unknown>>
+    const rows = rawRows.map(r => {
+        const normalized: Record<string, unknown> = {}
+        for (const key of Object.keys(r)) {
+            normalized[key.toLowerCase()] = r[key]
+        }
+        if (typeof normalized.position === "string") {
+            normalized.position = POSITION_MAP[normalized.position.toLowerCase().trim()] ?? normalized.position.trim()
+        }
+        return normalized as { name: string; position: string; price: number }
+    })
 
     let processed = 0
     const errors: string[] = []

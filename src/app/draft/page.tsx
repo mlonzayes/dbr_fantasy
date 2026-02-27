@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import PlayerCard from "@/components/draft/PlayerCard"
 import PositionFilter from "@/components/draft/PositionFilter"
 import SelectedPanel from "@/components/draft/SelectedPanel"
+import Modal from "@/components/Modal"
 
 interface Player {
   id: number
@@ -22,6 +23,7 @@ export default function DraftPage() {
   const [teamName, setTeamName] = useState("")
   const [loading, setLoading] = useState(false)
   const [fetchingTeam, setFetchingTeam] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     // Check if user already has a team
@@ -70,7 +72,7 @@ export default function DraftPage() {
       if (res.ok) {
         router.push("/team")
       } else {
-        alert(data.error || "Error al crear el equipo")
+        setErrorMessage(data.error || "Error al crear el equipo")
       }
     } finally {
       setLoading(false)
@@ -87,6 +89,12 @@ export default function DraftPage() {
 
   return (
     <div className="w-full bg-gray-50 flex-1">
+      <Modal
+        isOpen={!!errorMessage}
+        title="Error"
+        message={errorMessage ?? ""}
+        onCancel={() => setErrorMessage(null)}
+      />
       <div className="max-w-7xl mx-auto px-4 py-8 w-full">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Draft — Armá tu equipo</h1>
         <p className="text-gray-500 text-sm mb-6">
