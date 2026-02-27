@@ -1,18 +1,10 @@
 "use client"
 
-import Image from "next/image"
-
 interface Player {
   id: number
   name: string
   position: string
   currentPrice: number
-}
-
-interface Coach {
-  id: number
-  name: string
-  imageUrl?: string | null
 }
 
 interface SelectedPanelProps {
@@ -21,9 +13,6 @@ interface SelectedPanelProps {
   onTeamNameChange: (name: string) => void
   onConfirm: () => void
   loading: boolean
-  coaches: Coach[]
-  selectedCoach: Coach | null
-  onCoachSelect: (coach: Coach | null) => void
 }
 
 const BUDGET_MAX = 1250
@@ -73,9 +62,6 @@ export default function SelectedPanel({
   onTeamNameChange,
   onConfirm,
   loading,
-  coaches,
-  selectedCoach,
-  onCoachSelect,
 }: SelectedPanelProps) {
   const totalCost = selected.reduce((acc, p) => acc + p.currentPrice, 0)
   const budgetLeft = BUDGET_MAX - totalCost
@@ -83,7 +69,6 @@ export default function SelectedPanel({
 
   const countFor = (pos: string) => selected.filter((p) => p.position === pos).length
   const allComplete = [...FORWARDS, ...BACKS].every(({ position, max }) => countFor(position) === max)
-  const canConfirm = allComplete && !!selectedCoach && !!teamName.trim() && !loading && !overBudget
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 sticky top-4 shadow-sm flex flex-col gap-4">
@@ -111,54 +96,6 @@ export default function SelectedPanel({
         ))}
       </div>
 
-      {/* Coach selector */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Entrenador</p>
-          <span className={`text-xs font-medium ${selectedCoach ? "text-emerald-600" : "text-slate-400"}`}>
-            {selectedCoach ? "1/1" : "0/1"}
-          </span>
-        </div>
-        {selectedCoach ? (
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-            {selectedCoach.imageUrl ? (
-              <Image
-                src={selectedCoach.imageUrl}
-                alt={selectedCoach.name}
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-full object-cover shrink-0"
-              />
-            ) : (
-              <span className="w-8 h-8 rounded-full bg-emerald-200 flex items-center justify-center text-emerald-700 text-xs font-bold shrink-0">
-                DT
-              </span>
-            )}
-            <p className="text-xs font-medium text-emerald-800 flex-1 truncate">{selectedCoach.name}</p>
-            <button
-              onClick={() => onCoachSelect(null)}
-              className="text-emerald-400 hover:text-emerald-700 text-xs shrink-0"
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <select
-            value=""
-            onChange={(e) => {
-              const coach = coaches.find((c) => c.id === Number(e.target.value))
-              if (coach) onCoachSelect(coach)
-            }}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
-          >
-            <option value="">— Elegir entrenador —</option>
-            {coaches.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        )}
-      </div>
-
       <input
         type="text"
         placeholder="Nombre del equipo"
@@ -173,7 +110,7 @@ export default function SelectedPanel({
 
       <button
         onClick={onConfirm}
-        disabled={!canConfirm}
+        disabled={!allComplete || !teamName.trim() || loading || overBudget}
         className="w-full bg-slate-900 text-white py-2 rounded font-light text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors"
       >
         {loading ? "Guardando..." : "Confirmar equipo"}

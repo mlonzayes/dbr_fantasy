@@ -21,11 +21,20 @@ model Player {
   id          Int          @id @default(autoincrement())
   name        String
   position    String       // Pilar, Hooker, Segunda línea, Ala, N°8, Medio scrum, Apertura, Centro, Wing, Full
+  division    String?      // Primera, Intermedia, Pre A, Pre B, Pre C, Pre D
   totalPoints Int          @default(0)
   basePrice   Int          @default(50)
   currentPrice Int         @default(50)
+  imageUrl    String?
   weeklyStats WeeklyStat[]
   teamPlayers TeamPlayer[]
+}
+
+model Coach {
+  id       Int    @id @default(autoincrement())
+  name     String
+  imageUrl String?
+  teams    Team[]
 }
 
 model Team {
@@ -34,6 +43,8 @@ model Team {
   userId    String       @unique
   user      User         @relation(fields: [userId], references: [id])
   players   TeamPlayer[]
+  coachId   Int?
+  coach     Coach?       @relation(fields: [coachId], references: [id])
   createdAt DateTime     @default(now())
 }
 

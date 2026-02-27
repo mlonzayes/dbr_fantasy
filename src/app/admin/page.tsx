@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
+import Image from "next/image"
 import { checkIsAdmin } from "@/lib/isAdmin"
 import { prisma } from "@/lib/prisma"
 import { clerkClient } from "@clerk/nextjs/server"
@@ -8,9 +9,11 @@ import AdminPlayerForm from "./AdminPlayerForm"
 import AdminBulkPlayerForm from "./AdminBulkPlayerForm"
 import AdminCalendarForm from "./AdminCalendarForm"
 import AdminNotificationForm from "./AdminNotificationForm"
+import AdminCoachForm from "./AdminCoachForm"
 import AdminTabs from "./AdminTabs"
 import AdminDeletePlayerButton from "./AdminDeletePlayerButton"
 import AdminDeleteMatchButton from "./AdminDeleteMatchButton"
+import AdminExcelForm from "./AdminExcelForm"
 
 export default async function AdminPage({
   searchParams,
@@ -30,11 +33,21 @@ export default async function AdminPage({
           <AdminTabs />
         </Suspense>
         {tab === "puntos" && <TabPuntos />}
+        {tab === "excel" && <TabExcel />}
         {tab === "jugadores" && <TabJugadores />}
+        {tab === "entrenadores" && <TabEntrenadores />}
         {tab === "calendario" && <TabCalendario />}
         {tab === "notificaciones" && <TabNotificaciones />}
         {tab === "usuarios" && <TabUsuarios />}
       </div>
+    </div>
+  )
+}
+
+function TabExcel() {
+  return (
+    <div>
+      <AdminExcelForm />
     </div>
   )
 }
@@ -83,6 +96,7 @@ async function TabJugadores() {
               <th className="text-left px-4 py-3 font-semibold text-gray-600">ID</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Nombre</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Posición</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">División</th>
               <th className="text-right px-4 py-3 font-semibold text-gray-600">Precio</th>
               <th className="text-right px-4 py-3 font-semibold text-gray-600">Puntos</th>
               <th className="px-4 py-3"></th>
@@ -94,6 +108,13 @@ async function TabJugadores() {
                 <td className="px-4 py-2 text-gray-400 font-mono">{p.id}</td>
                 <td className="px-4 py-2 font-medium">{p.name}</td>
                 <td className="px-4 py-2 text-gray-500">{p.position}</td>
+                <td className="px-4 py-2">
+                  {p.division ? (
+                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">{p.division}</span>
+                  ) : (
+                    <span className="text-gray-300 text-xs">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-2 text-right font-medium text-emerald-600">${p.currentPrice}</td>
                 <td className="px-4 py-2 text-right font-semibold text-green-700">{p.totalPoints}</td>
                 <td className="px-4 py-2 text-right">
@@ -103,6 +124,52 @@ async function TabJugadores() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  )
+}
+
+async function TabEntrenadores() {
+  const coaches = await prisma.coach.findMany({ orderBy: { name: "asc" } })
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded border border-slate-200 p-6 shadow-sm">
+        <h2 className="text-lg font-light text-slate-800 mb-4 pb-2 border-b border-slate-100">Crear Entrenador</h2>
+        <AdminCoachForm />
+      </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+        <h2 className="text-lg font-semibold text-gray-800 px-6 py-4 border-b border-gray-100">
+          Entrenadores registrados ({coaches.length})
+        </h2>
+        {coaches.length === 0 ? (
+          <p className="px-6 py-6 text-slate-400 text-sm">No hay entrenadores cargados todavía.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">ID</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Foto</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Nombre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {coaches.map((c) => (
+                <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-2 text-gray-400 font-mono">{c.id}</td>
+                  <td className="px-4 py-2">
+                    {c.imageUrl ? (
+                      <Image src={c.imageUrl} alt={c.name} width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold">DT</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 font-medium">{c.name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

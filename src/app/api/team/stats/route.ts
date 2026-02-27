@@ -10,6 +10,7 @@ export async function GET() {
   const team = await prisma.team.findUnique({
     where: { userId },
     include: {
+      coach: true,
       players: {
         include: {
           player: {

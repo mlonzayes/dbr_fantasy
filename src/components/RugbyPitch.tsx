@@ -1,10 +1,20 @@
 "use client"
 
+import Image from "next/image"
+import { FaUser } from "react-icons/fa"
+
 interface PitchPlayer {
     id: number
     name: string
     position: string
     currentPrice: number
+    imageUrl?: string | null
+}
+
+interface Coach {
+    id: number
+    name: string
+    imageUrl?: string | null
 }
 
 interface RugbyPitchProps {
@@ -12,6 +22,9 @@ interface RugbyPitchProps {
     onPlayerClick?: (player: PitchPlayer) => void
     onEmptySlotClick?: (position: string) => void
     selectedPlayerId?: number
+    coach?: Coach | null
+    onCoachClick?: () => void
+    onEmptyCoachClick?: () => void
 }
 
 function getPlayersByPositions(players: PitchPlayer[], positions: string[]) {
@@ -29,56 +42,137 @@ function getPlayersByPositions(players: PitchPlayer[], positions: string[]) {
     return result
 }
 
-// Jersey silhouette: sleeves + body, straight top edge between collar points
-const JERSEY_PATH = "M15,2 L0,14 L0,26 L10,24 L10,50 L38,50 L38,24 L48,26 L48,14 L33,2 Z"
-
-function JerseyIcon({ uid, selected }: { uid: string; selected?: boolean }) {
-    const clipId = `jc-${uid}`
+function FieldSVG() {
     return (
-        <svg
-            viewBox="0 0 48 52"
-            className="w-10 h-10 sm:w-12 sm:h-12 drop-shadow-md"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <defs>
-                <clipPath id={clipId}>
-                    <path d={JERSEY_PATH} />
-                </clipPath>
-            </defs>
+        <svg viewBox="0 0 70 120" className="w-full h-auto block" xmlns="http://www.w3.org/2000/svg">
+            {/* Base verde */}
+            <rect width="70" height="120" fill="#2d6b1a" />
+            {/* Franjas de césped alternadas */}
+            {Array.from({ length: 10 }).map((_, i) =>
+                i % 2 === 0 ? null : (
+                    <rect key={i} x="0" y={i * 12} width="70" height="12" fill="#306e1c" />
+                )
+            )}
+            {/* Zonas de anotación */}
+            <rect x="0" y="0" width="70" height="10" fill="#265f14" />
+            <rect x="0" y="110" width="70" height="10" fill="#265f14" />
 
-            {/* Jersey body — stripes clipped to jersey shape */}
-            <g clipPath={`url(#${clipId})`}>
-                {selected ? (
-                    <rect width="48" height="52" fill="#FACC15" />
-                ) : (
-                    <>
-                        {/* Navy base */}
-                        <rect width="48" height="52" fill="#1B2E5A" />
-                        {/* Thin red/white stripes */}
-                        <rect y="13" width="48" height="3" fill="#CC2200" />
-                        <rect y="16" width="48" height="3" fill="#ffffff" />
-                        <rect y="21" width="48" height="3" fill="#CC2200" />
-                        <rect y="24" width="48" height="3" fill="#ffffff" />
-                        <rect y="29" width="48" height="3" fill="#CC2200" />
-                        <rect y="32" width="48" height="3" fill="#ffffff" />
-                        <rect y="37" width="48" height="3" fill="#CC2200" />
-                        <rect y="40" width="48" height="3" fill="#ffffff" />
-                        <rect y="45" width="48" height="3" fill="#CC2200" />
-                    </>
-                )}
-            </g>
+            {/* Líneas de banda (touch lines) */}
+            <line x1="1" y1="0" x2="1" y2="120" stroke="white" strokeWidth="0.7" />
+            <line x1="69" y1="0" x2="69" y2="120" stroke="white" strokeWidth="0.7" />
 
-            {/* V-neck collar triangle — drawn on top of stripes */}
-            <path
-                d="M15,2 L33,2 L24,15 Z"
-                fill={selected ? "#FEF08A" : "white"}
-                clipPath={`url(#${clipId})`}
-            />
+            {/* Líneas de balón muerto */}
+            <line x1="0" y1="0.3" x2="70" y2="0.3" stroke="white" strokeWidth="0.7" />
+            <line x1="0" y1="119.7" x2="70" y2="119.7" stroke="white" strokeWidth="0.7" />
+
+            {/* Try lines */}
+            <line x1="1" y1="10" x2="69" y2="10" stroke="white" strokeWidth="0.7" />
+            <line x1="1" y1="110" x2="69" y2="110" stroke="white" strokeWidth="0.7" />
+
+            {/* 22m lines */}
+            <line x1="1" y1="32" x2="69" y2="32" stroke="white" strokeWidth="0.5" />
+            <line x1="1" y1="88" x2="69" y2="88" stroke="white" strokeWidth="0.5" />
+
+            {/* 10m lines (punteadas) */}
+            <line x1="1" y1="20" x2="69" y2="20" stroke="white" strokeWidth="0.3" strokeDasharray="2 2" opacity="0.6" />
+            <line x1="1" y1="100" x2="69" y2="100" stroke="white" strokeWidth="0.3" strokeDasharray="2 2" opacity="0.6" />
+
+            {/* Línea del medio */}
+            <line x1="1" y1="60" x2="69" y2="60" stroke="white" strokeWidth="0.5" />
+            <circle cx="35" cy="60" r="0.7" fill="white" />
+
+            {/* Líneas de 5m (verticales punteadas) */}
+            <line x1="6" y1="10" x2="6" y2="110" stroke="white" strokeWidth="0.25" strokeDasharray="1 3" opacity="0.5" />
+            <line x1="64" y1="10" x2="64" y2="110" stroke="white" strokeWidth="0.25" strokeDasharray="1 3" opacity="0.5" />
+
+            {/* Líneas de 15m (verticales punteadas) */}
+            <line x1="16" y1="10" x2="16" y2="110" stroke="white" strokeWidth="0.25" strokeDasharray="1 3" opacity="0.5" />
+            <line x1="54" y1="10" x2="54" y2="110" stroke="white" strokeWidth="0.25" strokeDasharray="1 3" opacity="0.5" />
+
+
+            {/* Etiquetas de líneas */}
+            <text x="2.5" y="30.5" fill="white" fontSize="2.4" fontFamily="Arial, sans-serif" fontWeight="bold" opacity="0.85">22</text>
+            <text x="62" y="30.5" fill="white" fontSize="2.4" fontFamily="Arial, sans-serif" fontWeight="bold" opacity="0.85">22</text>
+            <text x="2.5" y="86.5" fill="white" fontSize="2.4" fontFamily="Arial, sans-serif" fontWeight="bold" opacity="0.85">22</text>
+            <text x="62" y="86.5" fill="white" fontSize="2.4" fontFamily="Arial, sans-serif" fontWeight="bold" opacity="0.85">22</text>
+            <text x="2.5" y="58.5" fill="white" fontSize="2.4" fontFamily="Arial, sans-serif" fontWeight="bold" opacity="0.85">50</text>
+            <text x="62" y="58.5" fill="white" fontSize="2.4" fontFamily="Arial, sans-serif" fontWeight="bold" opacity="0.85">50</text>
         </svg>
     )
 }
 
-export default function RugbyPitch({ players, onPlayerClick, onEmptySlotClick, selectedPlayerId }: RugbyPitchProps) {
+function PlayerChip({
+    player,
+    selected,
+    onClick,
+}: {
+    player: PitchPlayer
+    selected: boolean
+    onClick: () => void
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex flex-col items-center transition-transform duration-150 ${selected ? "scale-110" : "hover:scale-105"}`}
+        >
+            {/* Foto circular */}
+            <div className={`relative w-11 h-11 rounded-full overflow-hidden border-2 shadow-md ${selected ? "border-yellow-400 ring-2 ring-yellow-300/60" : "border-white"}`}>
+                {player.imageUrl ? (
+                    <Image src={player.imageUrl} alt={player.name} width={44} height={44} className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full bg-[#1B2E5A] flex items-center justify-center">
+                        <FaUser className="text-white text-sm" />
+                    </div>
+                )}
+                {/* Badge de precio */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-center">
+                    <span className="text-[7px] font-bold text-white leading-tight">${player.currentPrice}</span>
+                </div>
+            </div>
+            {/* Nombre + posición */}
+            <div className={`mt-0.5 rounded shadow-sm text-center w-[62px] ${selected ? "bg-yellow-300" : "bg-white/95"}`}>
+                <p className="text-[9px] font-bold text-slate-800 truncate px-0.5 leading-tight">
+                    {player.name.split(" ").slice(-1)[0].toUpperCase()}
+                </p>
+                <p className={`text-[7px] truncate px-0.5 leading-tight ${selected ? "text-yellow-800" : "text-slate-500"}`}>
+                    {player.position}
+                </p>
+            </div>
+        </button>
+    )
+}
+
+function EmptySlot({
+    position,
+    onClick,
+}: {
+    position: string
+    onClick?: () => void
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex flex-col items-center transition-opacity ${onClick ? "cursor-pointer opacity-70 hover:opacity-100" : "cursor-default opacity-40"}`}
+        >
+            <div className="w-11 h-11 rounded-full bg-white/10 border-2 border-white/50 border-dashed flex items-center justify-center shadow">
+                <span className="text-white/80 text-lg font-bold leading-none">+</span>
+            </div>
+            <div className="mt-0.5 bg-white/60 rounded text-center w-[62px]">
+                <p className="text-[8px] font-medium text-slate-700 truncate px-0.5 leading-tight">{position}</p>
+            </div>
+        </button>
+    )
+}
+
+export default function RugbyPitch({
+    players,
+    onPlayerClick,
+    onEmptySlotClick,
+    selectedPlayerId,
+    coach,
+    onCoachClick,
+    onEmptyCoachClick,
+}: RugbyPitchProps) {
     const rowsConfig = [
         { name: "Primera Línea", positions: ["Pilar", "Hooker", "Pilar"] },
         { name: "Segunda Línea", positions: ["Segunda línea", "Segunda línea"] },
@@ -89,95 +183,66 @@ export default function RugbyPitch({ players, onPlayerClick, onEmptySlotClick, s
     ]
 
     return (
-        <div className="relative w-full aspect-[4/5] sm:aspect-[3/4] max-w-2xl mx-auto rounded-lg overflow-hidden border-4 border-slate-50 shadow-lg bg-[#2e7d32]">
-            {/* Grass stripes */}
-            <div className="absolute inset-0 flex flex-col">
-                {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className={`flex-1 w-full ${i % 2 === 0 ? "bg-white/5" : "bg-transparent"}`} />
-                ))}
-            </div>
+        <div className="relative w-full rounded-xl overflow-hidden shadow-2xl">
+            <FieldSVG />
 
-            {/* In-goal areas */}
-            <div className="absolute top-0 left-0 right-0 h-[9%] bg-black/15" />
-            <div className="absolute bottom-0 left-0 right-0 h-[9%] bg-black/15" />
-
-            {/* Try lines */}
-            <div className="absolute top-[9%] w-full h-[2px] bg-white/80" />
-            <div className="absolute bottom-[9%] w-full h-[2px] bg-white/80" />
-
-            {/* 22m lines */}
-            <div className="absolute top-[31%] w-full h-[2px] bg-white/40" />
-            <div className="absolute bottom-[31%] w-full h-[2px] bg-white/40" />
-
-            {/* 10m lines */}
-            <div className="absolute top-[43%] w-full h-[1px] bg-white/25" />
-            <div className="absolute bottom-[43%] w-full h-[1px] bg-white/25" />
-
-            {/* Halfway line */}
-            <div className="absolute top-1/2 w-full h-[3px] bg-white/60" />
-
-            {/* Rugby Goal Posts - Top */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-10">
-                <div className="absolute bottom-0 left-1/2 -translate-x-px w-[2px] h-3 bg-yellow-300/95" />
-                <div className="absolute bottom-3 left-0 right-0 h-[2px] bg-yellow-300/95" />
-                <div className="absolute top-0 bottom-3 left-0 w-[2px] bg-yellow-300/95" />
-                <div className="absolute top-0 bottom-3 right-0 w-[2px] bg-yellow-300/95" />
-            </div>
-
-            {/* Rugby Goal Posts - Bottom */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-10">
-                <div className="absolute top-0 left-1/2 -translate-x-px w-[2px] h-3 bg-yellow-300/95" />
-                <div className="absolute top-3 left-0 right-0 h-[2px] bg-yellow-300/95" />
-                <div className="absolute top-3 bottom-0 left-0 w-[2px] bg-yellow-300/95" />
-                <div className="absolute top-3 bottom-0 right-0 w-[2px] bg-yellow-300/95" />
-            </div>
-
-            {/* Players */}
-            <div className="relative z-10 w-full h-full flex flex-col justify-between py-3 sm:py-8 px-1 sm:px-3">
+            <div className="absolute inset-0 flex flex-col justify-between pt-[22%] pb-[20%] px-2">
                 {rowsConfig.map((row, rowIdx) => {
                     const rowPlayers = getPlayersByPositions(players, row.positions)
                     return (
                         <div key={row.name} className="flex justify-evenly items-center w-full">
                             {rowPlayers.map((player, idx) => (
-                                <div
-                                    key={idx}
-                                    className="flex flex-col items-center w-[54px] sm:w-20"
-                                    onClick={() => player && onPlayerClick?.(player)}
-                                >
+                                <div key={idx} className="flex justify-center">
                                     {player ? (
-                                        <div className={`flex flex-col items-center cursor-pointer transition-transform duration-150 ${selectedPlayerId === player.id ? "scale-110" : "hover:scale-105"}`}>
-                                            <div className="relative">
-                                                <JerseyIcon uid={`${player.id}`} selected={selectedPlayerId === player.id} />
-                                                <div className="absolute inset-0 flex items-center justify-center pt-4">
-                                                    <span className="text-[8px] sm:text-[9px] font-bold text-slate-800 bg-white/90 px-1 rounded leading-tight">
-                                                        ${player.currentPrice}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className={`mt-1 px-1 py-0.5 rounded shadow-sm text-center transition-colors duration-150 ${selectedPlayerId === player.id ? "bg-yellow-300" : "bg-white/95"}`}>
-                                                <p className="text-[9px] sm:text-[11px] font-bold text-slate-800 truncate w-[50px] sm:w-[72px]">
-                                                    {player.name.split(" ").slice(-1)[0].toUpperCase()}
-                                                </p>
-                                            </div>
-                                        </div>
+                                        <PlayerChip
+                                            player={player}
+                                            selected={selectedPlayerId === player.id}
+                                            onClick={() => onPlayerClick?.(player)}
+                                        />
                                     ) : (
-                                        <div
-                                            className={`flex flex-col items-center opacity-50 transition-opacity duration-150 ${onEmptySlotClick ? "cursor-pointer hover:opacity-80" : ""}`}
-                                            onClick={() => onEmptySlotClick?.(row.positions[idx])}
-                                        >
-                                            <JerseyIcon uid={`empty-${rowIdx}-${idx}`} />
-                                            <div className="mt-1 bg-white/60 px-1 py-0.5 rounded text-center">
-                                                <p className="text-[9px] sm:text-[11px] font-medium text-slate-600 truncate w-[50px] sm:w-[72px]">
-                                                    {row.positions[idx]}
-                                                </p>
-                                            </div>
-                                        </div>
+                                        <EmptySlot
+                                            position={row.positions[idx]}
+                                            onClick={onEmptySlotClick ? () => onEmptySlotClick(row.positions[idx]) : undefined}
+                                        />
                                     )}
                                 </div>
                             ))}
                         </div>
                     )
                 })}
+
+                {/* Entrenador */}
+                <div className="flex justify-center">
+                    {coach ? (
+                        <button
+                            onClick={onCoachClick}
+                            className="flex items-center gap-1.5 bg-white/90 hover:bg-yellow-50 border border-white/60 hover:border-yellow-300 rounded-lg px-2 py-1 shadow transition-all"
+                        >
+                            {coach.imageUrl ? (
+                                <Image src={coach.imageUrl} alt={coach.name} width={24} height={24} className="w-6 h-6 rounded-full object-cover" />
+                            ) : (
+                                <span className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-[9px] font-bold">DT</span>
+                            )}
+                            <div>
+                                <p className="text-[7px] font-semibold text-slate-400 uppercase tracking-widest leading-none">DT</p>
+                                <p className="text-[9px] font-bold text-slate-800 leading-tight">
+                                    {coach.name.split(" ").slice(-1)[0].toUpperCase()}
+                                </p>
+                            </div>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onEmptyCoachClick}
+                            className={`flex items-center gap-1.5 bg-white/60 border border-white/40 rounded-lg px-2 py-1 transition-all ${onEmptyCoachClick ? "cursor-pointer hover:bg-white/80 opacity-80" : "opacity-40 cursor-default"}`}
+                        >
+                            <span className="w-6 h-6 rounded-full bg-slate-300/60 flex items-center justify-center text-slate-500 text-xs font-bold">+</span>
+                            <div>
+                                <p className="text-[7px] font-semibold text-slate-400 uppercase tracking-widest leading-none">DT</p>
+                                <p className="text-[9px] font-medium text-slate-500 leading-tight">Sin asignar</p>
+                            </div>
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )

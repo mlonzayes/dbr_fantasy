@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const existing = await prisma.team.findUnique({ where: { userId } })
   if (existing) return NextResponse.json({ error: "Ya tenés un equipo" }, { status: 400 })
 
-  const { name, playerIds } = await req.json()
+  const { name, playerIds, coachId } = await req.json()
 
   if (!isTransferWindowOpen()) {
     return NextResponse.json({ error: "El mercado se encuentra cerrado hasta las 19:00hs." }, { status: 403 })
@@ -68,11 +68,12 @@ export async function POST(req: Request) {
     data: {
       name,
       userId,
+      coachId: coachId ? Number(coachId) : null,
       players: {
         create: playerIds.map((id: number) => ({ playerId: id })),
       },
     },
-    include: { players: { include: { player: true } } },
+    include: { players: { include: { player: true } }, coach: true },
   })
 
   return NextResponse.json(team)

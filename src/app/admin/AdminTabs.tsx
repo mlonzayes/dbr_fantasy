@@ -5,7 +5,9 @@ import { useSearchParams } from "next/navigation"
 
 const TABS = [
   { key: "puntos", label: "Puntos" },
+  { key: "excel", label: "Excel" },
   { key: "jugadores", label: "Jugadores" },
+  { key: "entrenadores", label: "Entrenadores" },
   { key: "calendario", label: "Calendario" },
   { key: "notificaciones", label: "Notificaciones" },
   { key: "usuarios", label: "Usuarios" },

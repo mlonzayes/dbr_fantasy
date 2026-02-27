@@ -2,15 +2,25 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import RugbyPitch from "@/components/RugbyPitch"
 import Modal from "@/components/Modal"
-import { FaList, FaRegImage, FaTimes } from "react-icons/fa"
+import { FaList, FaRegImage, FaTimes, FaUser } from "react-icons/fa"
 
 interface WeeklyStat {
   week: number
   year: number
   points: number
+}
+
+interface MarketPlayer {
+  id: number
+  name: string
+  position: string
+  totalPoints: number
+  currentPrice: number
+  imageUrl?: string | null
 }
 
 interface Player {
@@ -19,7 +29,14 @@ interface Player {
   position: string
   totalPoints: number
   currentPrice: number
+  imageUrl?: string | null
   weeklyStats: WeeklyStat[]
+}
+
+interface Coach {
+  id: number
+  name: string
+  imageUrl?: string | null
 }
 
 interface TeamPlayer {
@@ -31,6 +48,7 @@ interface Team {
   name: string
   createdAt: string
   players: TeamPlayer[]
+  coach?: Coach | null
 }
 
 interface TeamStatsResponse {
@@ -124,6 +142,72 @@ function PlayerFicha({ player, onClose, isTransferOpen, onSell }: {
   )
 }
 
+function CoachPanel({ coach, coaches, onCoachChange, onClose }: {
+  coach: Coach | null | undefined
+  coaches: Coach[]
+  onCoachChange: (coachId: number) => Promise<void>
+  onClose: () => void
+}) {
+  const [changing, setChanging] = useState(false)
+
+  const handleChange = async (coachId: number) => {
+    setChanging(true)
+    try {
+      await onCoachChange(coachId)
+    } finally {
+      setChanging(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded border border-slate-200 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Entrenador</p>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1 transition-colors">
+          <FaTimes className="text-xs" />
+        </button>
+      </div>
+      {coach && (
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
+          {coach.imageUrl ? (
+            <Image src={coach.imageUrl} alt={coach.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+              <FaUser className="text-slate-400 text-sm" />
+            </div>
+          )}
+          <div>
+            <p className="font-semibold text-slate-800 text-sm">{coach.name}</p>
+            <p className="text-xs text-slate-400">Entrenador actual</p>
+          </div>
+        </div>
+      )}
+      <div className="px-4 py-3">
+        <p className="text-xs font-medium text-slate-500 mb-2">Cambiar entrenador:</p>
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {coaches.filter((c) => c.id !== coach?.id).map((c) => (
+            <button
+              key={c.id}
+              onClick={() => handleChange(c.id)}
+              disabled={changing}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-50 text-left transition-colors disabled:opacity-50"
+            >
+              {c.imageUrl ? (
+                <Image src={c.imageUrl} alt={c.name} width={28} height={28} className="w-7 h-7 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                  <FaUser className="text-slate-400 text-xs" />
+                </div>
+              )}
+              <span className="text-xs font-medium text-slate-700">{c.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PlayerList({ players, onSelect }: { players: TeamPlayer[]; onSelect: (p: Player) => void }) {
   const sorted = [...players].sort(
     (a, b) => POSITION_ORDER.indexOf(a.player.position) - POSITION_ORDER.indexOf(b.player.position)
@@ -156,22 +240,108 @@ function PlayerList({ players, onSelect }: { players: TeamPlayer[]; onSelect: (p
   )
 }
 
+function BuyPanel({
+  position,
+  players,
+  teamPlayerIds,
+  balance,
+  isLocked,
+  onBuy,
+  onClose,
+}: {
+  position: string
+  players: MarketPlayer[]
+  teamPlayerIds: Set<number>
+  balance: number
+  isLocked: boolean
+  onBuy: (p: MarketPlayer) => void
+  onClose: () => void
+}) {
+  const available = players.filter((p) => p.position === position && !teamPlayerIds.has(p.id))
+  return (
+    <div className="bg-white rounded border border-slate-200 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+        <div>
+          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Fichar jugador</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {position} · Saldo: <span className="text-emerald-600 font-medium">${balance}</span>
+          </p>
+        </div>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1 transition-colors">
+          <FaTimes className="text-xs" />
+        </button>
+      </div>
+      {isLocked && (
+        <div className="px-4 py-2 bg-orange-50 border-b border-orange-100 text-xs text-orange-700">
+          Mercado cerrado. Podés ver precios pero no comprar.
+        </div>
+      )}
+      <div className="divide-y divide-slate-50 max-h-[520px] overflow-y-auto">
+        {available.length === 0 ? (
+          <p className="px-4 py-6 text-xs text-center text-slate-400">
+            No hay jugadores disponibles para esta posición.
+          </p>
+        ) : (
+          available.map((player) => {
+            const canBuy = !isLocked && balance >= player.currentPrice
+            return (
+              <div key={player.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50">
+                <div className="flex items-center gap-2 min-w-0">
+                  {player.imageUrl ? (
+                    <Image src={player.imageUrl} alt={player.name} width={28} height={28} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                      <FaUser className="text-slate-400 text-xs" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-slate-800 truncate">{player.name}</p>
+                    <p className="text-[10px] text-slate-400">{player.totalPoints} pts</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 ml-2">
+                  <span className="text-xs font-medium text-emerald-600">${player.currentPrice}</span>
+                  <button
+                    onClick={() => onBuy(player)}
+                    disabled={!canBuy}
+                    className="text-xs bg-slate-900 text-white px-2.5 py-1 rounded hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Fichar
+                  </button>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function TeamPage() {
   const router = useRouter()
   const [data, setData] = useState<TeamStatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<"list" | "pitch">("pitch")
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
+  const [showCoachPanel, setShowCoachPanel] = useState(false)
+  const [coaches, setCoaches] = useState<Coach[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [allPlayers, setAllPlayers] = useState<MarketPlayer[]>([])
+  const [buyPosition, setBuyPosition] = useState<string | null>(null)
+  const [confirmBuy, setConfirmBuy] = useState<MarketPlayer | null>(null)
+  const [buying, setBuying] = useState(false)
 
-  useEffect(() => {
+  const loadData = () =>
     fetch("/api/team/stats")
       .then((r) => r.json())
-      .then((d) => {
-        setData(d)
-        setLoading(false)
-      })
+      .then((d) => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
+
+  useEffect(() => {
+    loadData()
+    fetch("/api/coaches").then((r) => r.json()).then(setCoaches)
+    fetch("/api/players").then((r) => r.json()).then(setAllPlayers).catch(() => {})
   }, [])
 
   if (loading) {
@@ -221,10 +391,36 @@ export default function TeamPage() {
     })
 
   const handleEmptySlotClick = (position: string) => {
-    router.push("/draft?position=" + encodeURIComponent(position))
+    setSelectedPlayer(null)
+    setShowCoachPanel(false)
+    setBuyPosition(position)
+  }
+
+  const handleBuyConfirm = async () => {
+    if (!confirmBuy) return
+    setBuying(true)
+    try {
+      const res = await fetch("/api/team/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId: confirmBuy.id }),
+      })
+      const d = await res.json()
+      if (res.ok) {
+        setConfirmBuy(null)
+        setBuyPosition(null)
+        loadData()
+      } else {
+        setConfirmBuy(null)
+        setErrorMessage(d.error || "Error al fichar jugador")
+      }
+    } finally {
+      setBuying(false)
+    }
   }
 
   const handlePitchPlayerClick = (pitchPlayer: { id: number }) => {
+    setShowCoachPanel(false)
     const found = team.players.find((tp) => tp.player.id === pitchPlayer.id)
     if (found) {
       setSelectedPlayer((prev) => (prev?.id === found.player.id ? null : found.player))
@@ -239,13 +435,31 @@ export default function TeamPage() {
     })
     if (res.ok) {
       setSelectedPlayer(null)
-      // Reload team data
-      const updated = await fetch("/api/team/stats").then((r) => r.json())
-      setData(updated)
+      await loadData()
     } else {
       const err = await res.json()
       setErrorMessage(err.error || "Error al vender jugador")
     }
+  }
+
+  const handleCoachChange = async (coachId: number) => {
+    const res = await fetch("/api/team/coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coachId }),
+    })
+    if (res.ok) {
+      await loadData()
+      setShowCoachPanel(false)
+    } else {
+      const err = await res.json()
+      setErrorMessage(err.error || "Error al cambiar entrenador")
+    }
+  }
+
+  const handleCoachSlotClick = () => {
+    setSelectedPlayer(null)
+    setShowCoachPanel((prev) => !prev)
   }
 
   return (
@@ -255,6 +469,14 @@ export default function TeamPage() {
         title="Error"
         message={errorMessage ?? ""}
         onCancel={() => setErrorMessage(null)}
+      />
+      <Modal
+        isOpen={!!confirmBuy}
+        title="Confirmar fichaje"
+        message={`¿Fichar a ${confirmBuy?.name} por $${confirmBuy?.currentPrice}?`}
+        onCancel={() => setConfirmBuy(null)}
+        onConfirm={handleBuyConfirm}
+        confirmLabel={buying ? "Fichando..." : "Fichar"}
       />
       <div className="max-w-6xl mx-auto px-4 py-8 w-full">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -302,35 +524,49 @@ export default function TeamPage() {
             )}
             <div className="flex flex-col lg:flex-row gap-6 items-start">
               {/* Pitch */}
-              <div className="flex-1 w-full">
+              <div className="w-full max-w-xs mx-auto lg:max-w-none lg:w-[480px] xl:w-[540px] shrink-0">
                 <RugbyPitch
                   players={team.players.map((tp) => ({
                     id: tp.player.id,
                     name: tp.player.name,
                     position: tp.player.position,
                     currentPrice: tp.player.currentPrice,
+                    imageUrl: tp.player.imageUrl,
                   }))}
                   onPlayerClick={handlePitchPlayerClick}
                   onEmptySlotClick={!isLocked ? handleEmptySlotClick : undefined}
                   selectedPlayerId={selectedPlayer?.id}
+                  coach={team.coach}
+                  onCoachClick={handleCoachSlotClick}
+                  onEmptyCoachClick={handleCoachSlotClick}
                 />
               </div>
 
-              {/* Desktop sidebar */}
-              <div className="hidden lg:block w-64 shrink-0">
-                {selectedPlayer ? (
+              {/* Panel al costado en desktop */}
+              <div className="flex-1 min-w-0 w-full">
+                {showCoachPanel ? (
+                  <CoachPanel
+                    coach={team.coach}
+                    coaches={coaches}
+                    onCoachChange={handleCoachChange}
+                    onClose={() => setShowCoachPanel(false)}
+                  />
+                ) : buyPosition ? (
+                  <BuyPanel
+                    position={buyPosition}
+                    players={allPlayers}
+                    teamPlayerIds={new Set(team.players.map((tp) => tp.player.id))}
+                    balance={user?.balance ?? 0}
+                    isLocked={!!isLocked}
+                    onBuy={setConfirmBuy}
+                    onClose={() => setBuyPosition(null)}
+                  />
+                ) : selectedPlayer ? (
                   <PlayerFicha player={selectedPlayer} onClose={() => setSelectedPlayer(null)} isTransferOpen={!isLocked} onSell={handleSell} />
                 ) : (
                   <PlayerList players={team.players} onSelect={setSelectedPlayer} />
                 )}
               </div>
-
-              {/* Mobile: ficha below pitch when selected */}
-              {selectedPlayer && (
-                <div className="lg:hidden w-full">
-                  <PlayerFicha player={selectedPlayer} onClose={() => setSelectedPlayer(null)} isTransferOpen={!isLocked} onSell={handleSell} />
-                </div>
-              )}
             </div>
           </div>
         ) : (
@@ -359,6 +595,22 @@ export default function TeamPage() {
                       </td>
                     </tr>
                   ))}
+                {/* Coach row */}
+                {team.coach && (
+                  <tr className="border-t border-gray-200 bg-slate-50/60">
+                    <td className="px-4 py-3 font-medium flex items-center gap-2">
+                      {team.coach.imageUrl ? (
+                        <Image src={team.coach.imageUrl} alt={team.coach.name} width={24} height={24} className="w-6 h-6 rounded-full object-cover" />
+                      ) : (
+                        <span className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold">DT</span>
+                      )}
+                      {team.coach.name}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400 italic text-xs">Entrenador</td>
+                    <td className="px-4 py-3 text-right text-slate-400">—</td>
+                    <td className="px-4 py-3 text-right text-slate-400">—</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

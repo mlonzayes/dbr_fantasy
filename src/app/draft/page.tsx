@@ -3,6 +3,8 @@
 import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
+import { FaUser } from "react-icons/fa"
 import PlayerCard from "@/components/draft/PlayerCard"
 import PositionFilter from "@/components/draft/PositionFilter"
 import SelectedPanel from "@/components/draft/SelectedPanel"
@@ -14,6 +16,13 @@ interface Player {
   position: string
   totalPoints: number
   currentPrice: number
+  imageUrl?: string | null
+}
+
+interface Coach {
+  id: number
+  name: string
+  imageUrl?: string | null
 }
 
 const POSITION_MAX: Record<string, number> = {
@@ -45,9 +54,24 @@ function MarketPlayerCard({
 
   return (
     <div className="bg-white rounded border border-slate-200 shadow-sm p-4 flex flex-col gap-2">
-      <div>
-        <p className="font-semibold text-slate-800 text-sm leading-tight">{player.name}</p>
-        <p className="text-xs text-slate-500">{player.position}</p>
+      <div className="flex items-center gap-3">
+        {player.imageUrl ? (
+          <Image
+            src={player.imageUrl}
+            alt={player.name}
+            width={48}
+            height={48}
+            className="w-12 h-12 rounded-full object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+            <FaUser className="text-slate-400" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{player.name}</p>
+          <p className="text-xs text-slate-500">{player.position}</p>
+        </div>
       </div>
       <div className="flex justify-between text-xs mt-1">
         <span className="font-medium text-emerald-600">${player.currentPrice}</span>
@@ -87,11 +111,13 @@ function DraftPageInner() {
 
   // Shared state
   const [players, setPlayers] = useState<Player[]>([])
+  const [coaches, setCoaches] = useState<Coach[]>([])
   const [positionFilter, setPositionFilter] = useState(searchParams.get("position") ?? "Todos")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Create mode state
   const [selected, setSelected] = useState<Player[]>([])
+  const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null)
   const [teamName, setTeamName] = useState("")
   const [createLoading, setCreateLoading] = useState(false)
 
@@ -111,9 +137,8 @@ function DraftPageInner() {
       })
       .catch(() => setMode("create"))
 
-    fetch("/api/players")
-      .then((r) => r.json())
-      .then(setPlayers)
+    fetch("/api/players").then((r) => r.json()).then(setPlayers).catch(() => {})
+    fetch("/api/coaches").then((r) => r.json()).then(setCoaches).catch(() => {})
   }, [])
 
   // Position limits for create mode
@@ -135,13 +160,17 @@ function DraftPageInner() {
   }
 
   const handleConfirm = async () => {
-    if (selected.length !== 15 || !teamName.trim()) return
+    if (selected.length !== 15 || !teamName.trim() || !selectedCoach) return
     setCreateLoading(true)
     try {
       const res = await fetch("/api/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: teamName.trim(), playerIds: selected.map((p) => p.id) }),
+        body: JSON.stringify({
+          name: teamName.trim(),
+          playerIds: selected.map((p) => p.id),
+          coachId: selectedCoach.id,
+        }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -285,7 +314,7 @@ function DraftPageInner() {
       <div className="max-w-7xl mx-auto px-4 py-8 w-full">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Draft — Armá tu equipo</h1>
         <p className="text-gray-500 text-sm mb-6">
-          Seleccioná exactamente 15 jugadores para tu equipo.
+          Seleccioná 15 jugadores y un entrenador para tu equipo.
         </p>
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
@@ -311,6 +340,9 @@ function DraftPageInner() {
               onTeamNameChange={setTeamName}
               onConfirm={handleConfirm}
               loading={createLoading}
+              coaches={coaches}
+              selectedCoach={selectedCoach}
+              onCoachSelect={setSelectedCoach}
             />
           </div>
         </div>

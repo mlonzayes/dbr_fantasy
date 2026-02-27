@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     if (!isAdmin) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     try {
-        const { name, position, price } = await req.json()
+        const { name, position, price, division } = await req.json()
 
         if (!name || !position || !price) {
             return NextResponse.json({ error: "Faltan datos obligatorios" }, { status: 400 })
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
             data: {
                 name: name.trim(),
                 position: position.trim(),
+                division: division?.trim() || null,
                 totalPoints: 0,
                 basePrice: numericPrice,
                 currentPrice: numericPrice,
