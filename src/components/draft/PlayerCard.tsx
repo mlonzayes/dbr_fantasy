@@ -12,16 +12,21 @@ interface PlayerCardProps {
   player: Player
   selected: boolean
   onToggle: (player: Player) => void
+  disabled?: boolean
 }
 
-export default function PlayerCard({ player, selected, onToggle }: PlayerCardProps) {
+export default function PlayerCard({ player, selected, onToggle, disabled }: PlayerCardProps) {
   return (
     <button
-      onClick={() => onToggle(player)}
-      className={`w-full text-left rounded-lg border p-3 flex flex-col justify-between h-full transition-all ${selected
-        ? "border-slate-800 bg-slate-900 text-white shadow-md"
-        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-        }`}
+      onClick={() => !disabled && onToggle(player)}
+      disabled={disabled && !selected}
+      className={`w-full text-left rounded-lg border p-3 flex flex-col justify-between h-full transition-all ${
+        selected
+          ? "border-slate-800 bg-slate-900 text-white shadow-md"
+          : disabled
+          ? "border-slate-100 bg-slate-50 opacity-40 cursor-not-allowed"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+      }`}
     >
       <div>
         <p className={`font-medium text-sm leading-tight ${selected ? "text-slate-100" : "text-slate-900"}`}>

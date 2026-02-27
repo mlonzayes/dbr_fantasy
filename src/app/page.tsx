@@ -84,7 +84,7 @@ export default async function HomePage() {
       <div className="text-center mb-10 sm:mb-16">
         <h1 className="text-3xl sm:text-4xl font-light text-slate-900 tracking-wide flex flex-col items-center justify-center gap-1">
           Rugby Fantasy
-          <span className="text-red-600 font-semibold text-xl sm:text-2xl tracking-normal">Don Bosco Rugby</span>
+          <span className="text-red-600 font-semibold text-xl sm:text-2xl tracking-normal">DBR</span>
         </h1>
         <p className="text-slate-500 mt-4 text-sm font-light">Armá tu equipo, seguí los puntos, ganá el ranking.</p>
       </div>

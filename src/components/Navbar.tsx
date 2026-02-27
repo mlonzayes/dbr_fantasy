@@ -103,7 +103,7 @@ export default function Navbar({ adminLink }: { adminLink: React.ReactNode }) {
     <nav className="relative z-50 rounded-b-xl flex items-center justify-between px-6 py-5 bg-slate-950 border-b border-red-600/50 text-white shadow-xl">
       <Link href="/" className="relative z-50 text-xl font-medium tracking-wide flex items-center gap-3">
         <span className="relative z-10 font-bold tracking-widest uppercase">
-          <span className="hidden sm:inline">DBR Fantasy</span>
+          <span className="hidden sm:inline">DBR <span className="italic font-extrabold tracking-normal normal-case">Fantasy</span></span>
           <span className="sm:hidden text-lg">DBR</span>
         </span>
       </Link>
@@ -152,41 +152,78 @@ export default function Navbar({ adminLink }: { adminLink: React.ReactNode }) {
       </button>
 
       {/* Mobile Full-Screen Menu */}
-      <div className={`fixed inset-0 bg-slate-950 z-40 flex flex-col items-center justify-center gap-8 transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
-        <Link href="/ranking" onClick={() => setIsOpen(false)} className="flex items-center gap-3 text-2xl font-light hover:text-red-400 transition-colors">
-          <FaTrophy />
-          <span>Ranking</span>
-        </Link>
-        <Link href="/calendar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 text-2xl font-light hover:text-red-400 transition-colors">
-          <FaCalendarAlt />
-          <span>Calendario</span>
-        </Link>
+      <div className={`fixed inset-0 bg-slate-950 z-40 flex flex-col pt-20 transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
+        {/* Nav links — centered in remaining space */}
+        <div className="flex-1 flex flex-col justify-center items-center gap-6">
+          {[
+            { href: "/ranking", icon: <FaTrophy />, label: "Ranking" },
+            { href: "/calendar", icon: <FaCalendarAlt />, label: "Calendario" },
+          ].map(({ href, icon, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 w-44 text-2xl font-light hover:text-red-400 transition-colors"
+            >
+              <span className="w-6 flex justify-center">{icon}</span>
+              <span>{label}</span>
+            </Link>
+          ))}
 
-        <SignedIn>
-          <Link href="/team" onClick={() => setIsOpen(false)} className="flex items-center gap-3 text-2xl font-light hover:text-red-400 transition-colors">
-            <FaShieldAlt />
-            <span>Mi Equipo</span>
-          </Link>
-          <Link href="/draft" onClick={() => setIsOpen(false)} className="flex items-center gap-3 text-2xl font-light hover:text-red-400 transition-colors">
-            <FaUsers />
-            <span>Draft</span>
-          </Link>
-          <div onClick={() => setIsOpen(false)}>
-            {adminLink}
-          </div>
-          <div className="mt-4 scale-150">
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </SignedIn>
+          <SignedIn>
+            {[
+              { href: "/team", icon: <FaShieldAlt />, label: "Mi Equipo" },
+              { href: "/draft", icon: <FaUsers />, label: "Draft" },
+            ].map(({ href, icon, label }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 w-44 text-2xl font-light hover:text-red-400 transition-colors"
+              >
+                <span className="w-6 flex justify-center">{icon}</span>
+                <span>{label}</span>
+              </Link>
+            ))}
+            <div onClick={() => setIsOpen(false)} className="w-44 flex items-center gap-3 text-2xl font-light">
+              <span className="w-6" />
+              {adminLink}
+            </div>
+            <div className="mt-2 scale-150">
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          </SignedIn>
 
-        <SignedOut>
-          <SignInButton mode="modal">
-            <button className="flex items-center gap-3 bg-red-600 text-white px-8 py-3 rounded-full text-xl font-light hover:bg-red-500 transition-colors">
-              <FaSignInAlt />
-              <span>Ingresar</span>
-            </button>
-          </SignInButton>
-        </SignedOut>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="flex items-center gap-3 bg-red-600 text-white px-8 py-3 rounded-full text-xl font-light hover:bg-red-500 transition-colors">
+                <FaSignInAlt />
+                <span>Ingresar</span>
+              </button>
+            </SignInButton>
+          </SignedOut>
+        </div>
+
+        {/* Footer */}
+        <div className="pb-10 flex flex-col items-center gap-1">
+          <p className="text-slate-600 text-xs tracking-widest uppercase">Desarrollado por</p>
+          <a
+            href="https://mwstudiodigital.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-400 text-sm font-medium hover:text-white transition-colors"
+          >
+            mwstudiodigital
+          </a>
+          <a
+            href="https://instagram.com/mw.design.development"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-500 text-xs hover:text-red-400 transition-colors"
+          >
+            @mw.design.development
+          </a>
+        </div>
       </div>
     </nav>
   )

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import RugbyPitch from "@/components/RugbyPitch"
 import Modal from "@/components/Modal"
 import { FaList, FaRegImage, FaTimes } from "react-icons/fa"
@@ -156,6 +157,7 @@ function PlayerList({ players, onSelect }: { players: TeamPlayer[]; onSelect: (p
 }
 
 export default function TeamPage() {
+  const router = useRouter()
   const [data, setData] = useState<TeamStatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<"list" | "pitch">("pitch")
@@ -218,6 +220,10 @@ export default function TeamPage() {
       return { year, week }
     })
 
+  const handleEmptySlotClick = (position: string) => {
+    router.push("/draft?position=" + encodeURIComponent(position))
+  }
+
   const handlePitchPlayerClick = (pitchPlayer: { id: number }) => {
     const found = team.players.find((tp) => tp.player.id === pitchPlayer.id)
     if (found) {
@@ -251,25 +257,25 @@ export default function TeamPage() {
         onCancel={() => setErrorMessage(null)}
       />
       <div className="max-w-6xl mx-auto px-4 py-8 w-full">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-light text-slate-900 tracking-wide">{team.name}</h1>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-light text-slate-900 tracking-wide truncate">{team.name}</h1>
               {isLocked && (
-                <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded border border-red-200 uppercase tracking-widest font-medium">Mercado Cerrado</span>
+                <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded border border-red-200 uppercase tracking-widest font-medium shrink-0">Mercado Cerrado</span>
               )}
-              <Link href="/draft" className="text-sm border border-slate-300 rounded px-2 py-1 text-slate-500 hover:text-slate-900 hover:border-slate-800 transition-colors">
+              <Link href="/draft" className="text-sm border border-slate-300 rounded px-2 py-1 text-slate-500 hover:text-slate-900 hover:border-slate-800 transition-colors shrink-0">
                 {isLocked ? "Ver precios" : "Mercado"}
               </Link>
             </div>
-            <div className="flex gap-6 mt-2">
-              <p className="text-red-600 text-lg font-medium">{totalPoints} <span className="text-xs font-light tracking-widest text-slate-500">PUNTOS</span></p>
-              <p className="text-emerald-600 text-lg font-medium">${portfolioValue} <span className="text-xs font-light uppercase tracking-widest text-slate-500">VALOR</span></p>
-              <p className="text-slate-800 text-lg font-medium">${user?.balance || 0} <span className="text-xs font-light uppercase tracking-widest text-slate-500">DISPONIBLE</span></p>
+            <div className="flex gap-4 mt-2 flex-wrap">
+              <p className="text-red-600 text-base font-medium">{totalPoints} <span className="text-xs font-light tracking-widest text-slate-500">PUNTOS</span></p>
+              <p className="text-emerald-600 text-base font-medium">${portfolioValue} <span className="text-xs font-light uppercase tracking-widest text-slate-500">VALOR</span></p>
+              <p className="text-slate-800 text-base font-medium">${user?.balance || 0} <span className="text-xs font-light uppercase tracking-widest text-slate-500">DISPONIBLE</span></p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-200 shadow-sm w-fit">
+          <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-200 shadow-sm w-fit self-start sm:self-auto shrink-0">
             <button
               onClick={() => setView("pitch")}
               className={`flex items-center gap-2 px-4 py-2 rounded text-sm transition-colors ${view === "pitch" ? "bg-slate-900 text-white font-light" : "text-slate-500 hover:text-slate-800"}`}
@@ -305,6 +311,7 @@ export default function TeamPage() {
                     currentPrice: tp.player.currentPrice,
                   }))}
                   onPlayerClick={handlePitchPlayerClick}
+                  onEmptySlotClick={!isLocked ? handleEmptySlotClick : undefined}
                   selectedPlayerId={selectedPlayer?.id}
                 />
               </div>

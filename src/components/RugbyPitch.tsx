@@ -1,7 +1,5 @@
 "use client"
 
-import { FaTshirt } from "react-icons/fa"
-
 interface PitchPlayer {
     id: number
     name: string
@@ -12,6 +10,7 @@ interface PitchPlayer {
 interface RugbyPitchProps {
     players: PitchPlayer[]
     onPlayerClick?: (player: PitchPlayer) => void
+    onEmptySlotClick?: (position: string) => void
     selectedPlayerId?: number
 }
 
@@ -30,7 +29,56 @@ function getPlayersByPositions(players: PitchPlayer[], positions: string[]) {
     return result
 }
 
-export default function RugbyPitch({ players, onPlayerClick, selectedPlayerId }: RugbyPitchProps) {
+// Jersey silhouette: sleeves + body, straight top edge between collar points
+const JERSEY_PATH = "M15,2 L0,14 L0,26 L10,24 L10,50 L38,50 L38,24 L48,26 L48,14 L33,2 Z"
+
+function JerseyIcon({ uid, selected }: { uid: string; selected?: boolean }) {
+    const clipId = `jc-${uid}`
+    return (
+        <svg
+            viewBox="0 0 48 52"
+            className="w-10 h-10 sm:w-12 sm:h-12 drop-shadow-md"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <defs>
+                <clipPath id={clipId}>
+                    <path d={JERSEY_PATH} />
+                </clipPath>
+            </defs>
+
+            {/* Jersey body — stripes clipped to jersey shape */}
+            <g clipPath={`url(#${clipId})`}>
+                {selected ? (
+                    <rect width="48" height="52" fill="#FACC15" />
+                ) : (
+                    <>
+                        {/* Navy base */}
+                        <rect width="48" height="52" fill="#1B2E5A" />
+                        {/* Thin red/white stripes */}
+                        <rect y="13" width="48" height="3" fill="#CC2200" />
+                        <rect y="16" width="48" height="3" fill="#ffffff" />
+                        <rect y="21" width="48" height="3" fill="#CC2200" />
+                        <rect y="24" width="48" height="3" fill="#ffffff" />
+                        <rect y="29" width="48" height="3" fill="#CC2200" />
+                        <rect y="32" width="48" height="3" fill="#ffffff" />
+                        <rect y="37" width="48" height="3" fill="#CC2200" />
+                        <rect y="40" width="48" height="3" fill="#ffffff" />
+                        <rect y="45" width="48" height="3" fill="#CC2200" />
+                    </>
+                )}
+            </g>
+
+            {/* V-neck collar triangle — drawn on top of stripes */}
+            <path
+                d="M15,2 L33,2 L24,15 Z"
+                fill={selected ? "#FEF08A" : "white"}
+                clipPath={`url(#${clipId})`}
+            />
+        </svg>
+    )
+}
+
+export default function RugbyPitch({ players, onPlayerClick, onEmptySlotClick, selectedPlayerId }: RugbyPitchProps) {
     const rowsConfig = [
         { name: "Primera Línea", positions: ["Pilar", "Hooker", "Pilar"] },
         { name: "Segunda Línea", positions: ["Segunda línea", "Segunda línea"] },
@@ -68,61 +116,58 @@ export default function RugbyPitch({ players, onPlayerClick, selectedPlayerId }:
             {/* Halfway line */}
             <div className="absolute top-1/2 w-full h-[3px] bg-white/60" />
 
-            {/* Rugby Goal Posts - Top (H shape, base goes down into in-goal) */}
+            {/* Rugby Goal Posts - Top */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-10">
-                {/* base support */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-px w-[2px] h-3 bg-yellow-300/95" />
-                {/* crossbar */}
                 <div className="absolute bottom-3 left-0 right-0 h-[2px] bg-yellow-300/95" />
-                {/* left upright */}
                 <div className="absolute top-0 bottom-3 left-0 w-[2px] bg-yellow-300/95" />
-                {/* right upright */}
                 <div className="absolute top-0 bottom-3 right-0 w-[2px] bg-yellow-300/95" />
             </div>
 
-            {/* Rugby Goal Posts - Bottom (H shape, base goes up into in-goal) */}
+            {/* Rugby Goal Posts - Bottom */}
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-10">
-                {/* base support */}
                 <div className="absolute top-0 left-1/2 -translate-x-px w-[2px] h-3 bg-yellow-300/95" />
-                {/* crossbar */}
                 <div className="absolute top-3 left-0 right-0 h-[2px] bg-yellow-300/95" />
-                {/* left upright */}
                 <div className="absolute top-3 bottom-0 left-0 w-[2px] bg-yellow-300/95" />
-                {/* right upright */}
                 <div className="absolute top-3 bottom-0 right-0 w-[2px] bg-yellow-300/95" />
             </div>
 
             {/* Players */}
-            <div className="relative z-10 w-full h-full flex flex-col justify-between py-4 sm:py-8 px-2">
-                {rowsConfig.map((row) => {
+            <div className="relative z-10 w-full h-full flex flex-col justify-between py-3 sm:py-8 px-1 sm:px-3">
+                {rowsConfig.map((row, rowIdx) => {
                     const rowPlayers = getPlayersByPositions(players, row.positions)
                     return (
-                        <div key={row.name} className="flex justify-center items-center gap-2 sm:gap-6 w-full">
+                        <div key={row.name} className="flex justify-evenly items-center w-full">
                             {rowPlayers.map((player, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex flex-col items-center w-20 sm:w-24"
+                                    className="flex flex-col items-center w-[54px] sm:w-20"
                                     onClick={() => player && onPlayerClick?.(player)}
                                 >
                                     {player ? (
                                         <div className={`flex flex-col items-center cursor-pointer transition-transform duration-150 ${selectedPlayerId === player.id ? "scale-110" : "hover:scale-105"}`}>
-                                            <div className={`relative drop-shadow-md transition-colors duration-150 ${selectedPlayerId === player.id ? "text-yellow-400" : "text-blue-700"}`}>
-                                                <FaTshirt className="text-4xl sm:text-5xl" />
-                                                <div className="absolute inset-0 flex items-center justify-center pt-1 text-[10px] sm:text-xs font-bold text-white">
-                                                    ${player.currentPrice}
+                                            <div className="relative">
+                                                <JerseyIcon uid={`${player.id}`} selected={selectedPlayerId === player.id} />
+                                                <div className="absolute inset-0 flex items-center justify-center pt-4">
+                                                    <span className="text-[8px] sm:text-[9px] font-bold text-slate-800 bg-white/90 px-1 rounded leading-tight">
+                                                        ${player.currentPrice}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className={`mt-1 px-2 py-0.5 rounded shadow-sm text-center transition-colors duration-150 ${selectedPlayerId === player.id ? "bg-yellow-300" : "bg-white/95"}`}>
-                                                <p className="text-[10px] sm:text-xs font-bold text-slate-800 truncate w-16 sm:w-20">
+                                            <div className={`mt-1 px-1 py-0.5 rounded shadow-sm text-center transition-colors duration-150 ${selectedPlayerId === player.id ? "bg-yellow-300" : "bg-white/95"}`}>
+                                                <p className="text-[9px] sm:text-[11px] font-bold text-slate-800 truncate w-[50px] sm:w-[72px]">
                                                     {player.name.split(" ").slice(-1)[0].toUpperCase()}
                                                 </p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center opacity-50">
-                                            <FaTshirt className="text-4xl sm:text-5xl text-slate-400" />
-                                            <div className="mt-1 bg-white/50 px-2 py-0.5 rounded text-center">
-                                                <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate w-16 sm:w-20">
+                                        <div
+                                            className={`flex flex-col items-center opacity-50 transition-opacity duration-150 ${onEmptySlotClick ? "cursor-pointer hover:opacity-80" : ""}`}
+                                            onClick={() => onEmptySlotClick?.(row.positions[idx])}
+                                        >
+                                            <JerseyIcon uid={`empty-${rowIdx}-${idx}`} />
+                                            <div className="mt-1 bg-white/60 px-1 py-0.5 rounded text-center">
+                                                <p className="text-[9px] sm:text-[11px] font-medium text-slate-600 truncate w-[50px] sm:w-[72px]">
                                                     {row.positions[idx]}
                                                 </p>
                                             </div>

@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PlayerCard from "@/components/draft/PlayerCard"
 import PositionFilter from "@/components/draft/PositionFilter"
@@ -16,17 +16,33 @@ interface Player {
   currentPrice: number
 }
 
+const POSITION_MAX: Record<string, number> = {
+  "Pilar": 2, "Hooker": 1, "Segunda línea": 2, "Ala": 2, "N°8": 1,
+  "Medio scrum": 1, "Apertura": 1, "Centro": 2, "Wing": 2, "Full": 1,
+}
+
 function MarketPlayerCard({
   player,
   canBuy,
+  positionFull,
   isLocked,
   onBuy,
 }: {
   player: Player
   canBuy: boolean
+  positionFull: boolean
   isLocked: boolean
   onBuy: (p: Player) => void
 }) {
+  const disabled = isLocked || positionFull || !canBuy
+  const label = isLocked
+    ? "Mercado cerrado"
+    : positionFull
+    ? "Posición completa"
+    : !canBuy
+    ? "Sin saldo"
+    : `Comprar $${player.currentPrice}`
+
   return (
     <div className="bg-white rounded border border-slate-200 shadow-sm p-4 flex flex-col gap-2">
       <div>
@@ -39,29 +55,39 @@ function MarketPlayerCard({
       </div>
       <button
         onClick={() => onBuy(player)}
-        disabled={isLocked || !canBuy}
+        disabled={disabled}
         className="mt-1 w-full bg-slate-900 text-white text-xs py-1.5 rounded font-medium hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {isLocked ? "Mercado cerrado" : !canBuy ? "Sin saldo" : `Comprar $${player.currentPrice}`}
+        {label}
       </button>
     </div>
   )
 }
 
 export default function DraftPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><p className="text-gray-500">Cargando...</p></div>}>
+      <DraftPageInner />
+    </Suspense>
+  )
+}
+
+function DraftPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [mode, setMode] = useState<"loading" | "create" | "market">("loading")
 
   // Market mode state
   const [marketBalance, setMarketBalance] = useState(0)
   const [teamPlayerIds, setTeamPlayerIds] = useState<Set<number>>(new Set())
+  const [teamPositions, setTeamPositions] = useState<string[]>([])
   const [isLocked, setIsLocked] = useState(false)
   const [confirmBuy, setConfirmBuy] = useState<Player | null>(null)
   const [buying, setBuying] = useState(false)
 
   // Shared state
   const [players, setPlayers] = useState<Player[]>([])
-  const [positionFilter, setPositionFilter] = useState("Todos")
+  const [positionFilter, setPositionFilter] = useState(searchParams.get("position") ?? "Todos")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Create mode state
@@ -77,6 +103,7 @@ export default function DraftPage() {
           setMode("market")
           setMarketBalance(data.user?.balance ?? 0)
           setTeamPlayerIds(new Set(data.team.players.map((tp: { player: Player }) => tp.player.id)))
+          setTeamPositions(data.team.players.map((tp: { player: Player }) => tp.player.position))
           setIsLocked(data.isLocked)
         } else {
           setMode("create")
@@ -89,12 +116,20 @@ export default function DraftPage() {
       .then(setPlayers)
   }, [])
 
+  // Position limits for create mode
+  const isSlotFull = (player: Player) => {
+    if (selected.find((p) => p.id === player.id)) return false
+    const max = POSITION_MAX[player.position] ?? 0
+    const current = selected.filter((p) => p.position === player.position).length
+    return current >= max
+  }
+
   // Create mode handlers
   const togglePlayer = (player: Player) => {
     if (selected.find((p) => p.id === player.id)) {
       setSelected(selected.filter((p) => p.id !== player.id))
     } else {
-      if (selected.length >= 15) return
+      if (isSlotFull(player)) return
       setSelected([...selected, player])
     }
   }
@@ -156,6 +191,12 @@ export default function DraftPage() {
     const filtered =
       positionFilter === "Todos" ? available : available.filter((p) => p.position === positionFilter)
 
+    const isPositionFull = (player: Player) => {
+      const max = POSITION_MAX[player.position] ?? 0
+      const current = teamPositions.filter((pos) => pos === player.position).length
+      return current >= max
+    }
+
     return (
       <div className="w-full bg-gray-50 flex-1">
         <Modal
@@ -213,6 +254,7 @@ export default function DraftPage() {
                 key={player.id}
                 player={player}
                 canBuy={marketBalance >= player.currentPrice}
+                positionFull={isPositionFull(player)}
                 isLocked={isLocked}
                 onBuy={setConfirmBuy}
               />
@@ -257,6 +299,7 @@ export default function DraftPage() {
                   player={player}
                   selected={!!selected.find((p) => p.id === player.id)}
                   onToggle={togglePlayer}
+                  disabled={isSlotFull(player)}
                 />
               ))}
             </div>

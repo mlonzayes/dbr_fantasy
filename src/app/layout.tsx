@@ -5,6 +5,7 @@ import "./globals.css"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import AdminLink from "@/components/AdminLink"
+import OnboardingModal from "@/components/OnboardingModal"
 
 const poppins = Poppins({
   weight: ["300", "400", "500"],
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="es" className={`${poppins.variable}`}>
         <body className="font-sans antialiased font-light text-slate-800 bg-slate-50 min-h-screen flex flex-col">
           <Navbar adminLink={<AdminLink />} />
+          <OnboardingModal />
           <main className="flex-1 w-full flex flex-col">
             {children}
           </main>
