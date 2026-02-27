@@ -255,11 +255,12 @@ export default function TeamPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-light text-slate-900 tracking-wide">{team.name}</h1>
-              {isLocked ? (
+              {isLocked && (
                 <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded border border-red-200 uppercase tracking-widest font-medium">Mercado Cerrado</span>
-              ) : (
-                <Link href="/draft" className="text-sm border border-slate-300 rounded px-2 py-1 text-slate-500 hover:text-slate-900 hover:border-slate-800 transition-colors">Modificar</Link>
               )}
+              <Link href="/draft" className="text-sm border border-slate-300 rounded px-2 py-1 text-slate-500 hover:text-slate-900 hover:border-slate-800 transition-colors">
+                {isLocked ? "Ver precios" : "Mercado"}
+              </Link>
             </div>
             <div className="flex gap-6 mt-2">
               <p className="text-red-600 text-lg font-medium">{totalPoints} <span className="text-xs font-light tracking-widest text-slate-500">PUNTOS</span></p>

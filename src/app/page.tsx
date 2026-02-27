@@ -2,7 +2,15 @@ import Link from "next/link"
 import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { clerkClient } from "@clerk/nextjs/server"
-import { FaTrophy, FaMedal, FaArrowRight } from "react-icons/fa"
+import { FaTrophy, FaMedal, FaArrowRight, FaCalendarAlt } from "react-icons/fa"
+
+async function getNextMatch() {
+  return prisma.match.findFirst({
+    where: { date: { gte: new Date() } },
+    orderBy: { date: "asc" },
+  })
+}
+
 async function getRanking() {
   const teams = await prisma.team.findMany({
     include: {
@@ -40,7 +48,7 @@ async function getRanking() {
 
 export default async function HomePage() {
   const { userId } = await auth()
-  const ranking = await getRanking()
+  const [ranking, nextMatch] = await Promise.all([getRanking(), getNextMatch()])
 
   let userTeam = null
   let userPosition = null
@@ -109,6 +117,34 @@ export default async function HomePage() {
           </div>
         </div>
       )}
+
+      {nextMatch && (() => {
+        const fmt = new Intl.DateTimeFormat("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          weekday: "long", day: "numeric", month: "long",
+          hour: "2-digit", minute: "2-digit",
+        })
+        return (
+          <div className="bg-white border border-slate-200 rounded shadow-sm mb-12 overflow-hidden">
+            <div className="px-6 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+              <FaCalendarAlt className="text-red-500 text-xs" />
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Próximo partido</p>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-xs text-slate-400 mb-3 text-center uppercase tracking-widest">{nextMatch.round}</p>
+              <div className="flex items-center justify-center gap-4">
+                <span className="font-bold text-slate-900 text-lg text-right flex-1">{nextMatch.homeTeam}</span>
+                <span className="text-slate-300 font-light text-sm shrink-0">vs</span>
+                <span className="font-bold text-slate-900 text-lg text-left flex-1">{nextMatch.awayTeam}</span>
+              </div>
+              <div className="text-center mt-3 space-y-0.5">
+                <p className="text-sm text-slate-600 capitalize">{fmt.format(new Date(nextMatch.date))}</p>
+                <p className="text-xs text-slate-400">{nextMatch.stadium}</p>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <h2 className="text-lg font-light text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-2">Top 10</h2>
 
