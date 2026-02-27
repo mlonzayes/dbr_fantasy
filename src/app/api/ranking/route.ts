@@ -14,7 +14,7 @@ export async function GET() {
   // Obtener nombres desde Clerk
   const userIds = teams.map((t: { userId: string }) => t.userId)
   const clerk = await clerkClient()
-  const usersResponse = await clerk.users.getUserList({ userId: userIds })
+  const usersResponse = await clerk.users.getUserList({ userId: userIds, limit: 500 })
   const userMap = Object.fromEntries(
     usersResponse.data.map((u) => [
       u.id,

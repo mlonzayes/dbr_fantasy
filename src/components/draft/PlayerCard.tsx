@@ -9,6 +9,7 @@ interface Player {
   position: string
   totalPoints: number
   currentPrice: number
+  division?: string | null
   imageUrl?: string | null
 }
 
@@ -24,13 +25,12 @@ export default function PlayerCard({ player, selected, onToggle, disabled }: Pla
     <button
       onClick={() => !disabled && onToggle(player)}
       disabled={disabled && !selected}
-      className={`w-full text-left rounded-lg border p-3 flex flex-col justify-between h-full transition-all ${
-        selected
+      className={`w-full text-left rounded-lg border p-3 flex flex-col justify-between h-full transition-all ${selected
           ? "border-slate-800 bg-slate-900 text-white shadow-md"
           : disabled
-          ? "border-slate-100 bg-slate-50 opacity-40 cursor-not-allowed"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-      }`}
+            ? "border-slate-100 bg-slate-50 opacity-40 cursor-not-allowed"
+            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+        }`}
     >
       {/* Foto del jugador */}
       <div className="flex items-center gap-2 mb-2">
@@ -43,9 +43,8 @@ export default function PlayerCard({ player, selected, onToggle, disabled }: Pla
             className="w-10 h-10 rounded-full object-cover shrink-0"
           />
         ) : (
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-            selected ? "bg-slate-700" : "bg-slate-100"
-          }`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${selected ? "bg-slate-700" : "bg-slate-100"
+            }`}>
             <FaUser className={`text-sm ${selected ? "text-slate-400" : "text-slate-400"}`} />
           </div>
         )}
@@ -54,7 +53,7 @@ export default function PlayerCard({ player, selected, onToggle, disabled }: Pla
             {player.name}
           </p>
           <p className={`text-xs mt-0.5 ${selected ? "text-slate-400" : "text-slate-500"}`}>
-            {player.position}
+            {player.position}{player.division && ` · ${player.division}`}
           </p>
         </div>
       </div>

@@ -16,6 +16,7 @@ interface Player {
   position: string
   totalPoints: number
   currentPrice: number
+  division?: string | null
   imageUrl?: string | null
 }
 
@@ -47,10 +48,10 @@ function MarketPlayerCard({
   const label = isLocked
     ? "Mercado cerrado"
     : positionFull
-    ? "Posición completa"
-    : !canBuy
-    ? "Sin saldo"
-    : `Comprar $${player.currentPrice}`
+      ? "Posición completa"
+      : !canBuy
+        ? "Sin saldo"
+        : `Comprar $${player.currentPrice}`
 
   return (
     <div className="bg-white rounded border border-slate-200 shadow-sm p-4 flex flex-col gap-2">
@@ -71,6 +72,9 @@ function MarketPlayerCard({
         <div className="min-w-0">
           <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{player.name}</p>
           <p className="text-xs text-slate-500">{player.position}</p>
+          {player.division && (
+            <p className="text-[10px] text-slate-400 truncate">{player.division}</p>
+          )}
         </div>
       </div>
       <div className="flex justify-between text-xs mt-1">
@@ -113,6 +117,7 @@ function DraftPageInner() {
   const [players, setPlayers] = useState<Player[]>([])
   const [coaches, setCoaches] = useState<Coach[]>([])
   const [positionFilter, setPositionFilter] = useState(searchParams.get("position") ?? "Todos")
+  const [divisionFilter, setDivisionFilter] = useState("Todos")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Create mode state
@@ -137,8 +142,8 @@ function DraftPageInner() {
       })
       .catch(() => setMode("create"))
 
-    fetch("/api/players").then((r) => r.json()).then(setPlayers).catch(() => {})
-    fetch("/api/coaches").then((r) => r.json()).then(setCoaches).catch(() => {})
+    fetch("/api/players").then((r) => r.json()).then(setPlayers).catch(() => { })
+    fetch("/api/coaches").then((r) => r.json()).then(setCoaches).catch(() => { })
   }, [])
 
   // Position limits for create mode
@@ -217,8 +222,10 @@ function DraftPageInner() {
   // ── Market mode ──────────────────────────────────────────────────────────────
   if (mode === "market") {
     const available = players.filter((p) => !teamPlayerIds.has(p.id))
-    const filtered =
-      positionFilter === "Todos" ? available : available.filter((p) => p.position === positionFilter)
+    const divisions = ["Todos", ...Array.from(new Set(available.map((p) => p.division).filter(Boolean))).sort()] as string[]
+    const filtered = available
+      .filter((p) => positionFilter === "Todos" || p.position === positionFilter)
+      .filter((p) => divisionFilter === "Todos" || p.division === divisionFilter)
 
     const isPositionFull = (player: Player) => {
       const max = POSITION_MAX[player.position] ?? 0
@@ -273,8 +280,22 @@ function DraftPageInner() {
             </div>
           )}
 
-          <div className="mb-4">
+          <div className="mb-4 space-y-2">
             <PositionFilter selected={positionFilter} onSelect={setPositionFilter} />
+            <div className="flex flex-wrap gap-2">
+              {divisions.map((div) => (
+                <button
+                  key={div}
+                  onClick={() => setDivisionFilter(div)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${divisionFilter === div
+                    ? "bg-emerald-700 text-white"
+                    : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+                    }`}
+                >
+                  {div}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -300,8 +321,10 @@ function DraftPageInner() {
   }
 
   // ── Create mode (original draft flow) ────────────────────────────────────────
-  const filtered =
-    positionFilter === "Todos" ? players : players.filter((p) => p.position === positionFilter)
+  const divisions = ["Todos", ...Array.from(new Set(players.map((p) => p.division).filter(Boolean))).sort()] as string[]
+  const filtered = players
+    .filter((p) => positionFilter === "Todos" || p.position === positionFilter)
+    .filter((p) => divisionFilter === "Todos" || p.division === divisionFilter)
 
   return (
     <div className="w-full bg-gray-50 flex-1">
@@ -318,8 +341,22 @@ function DraftPageInner() {
         </p>
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
-            <div className="mb-4">
+            <div className="mb-4 space-y-2">
               <PositionFilter selected={positionFilter} onSelect={setPositionFilter} />
+              <div className="flex flex-wrap gap-2">
+                {divisions.map((div) => (
+                  <button
+                    key={div}
+                    onClick={() => setDivisionFilter(div)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${divisionFilter === div
+                      ? "bg-emerald-700 text-white"
+                      : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+                      }`}
+                  >
+                    {div}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filtered.map((player) => (

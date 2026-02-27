@@ -7,11 +7,13 @@ import { clerkClient } from "@clerk/nextjs/server"
 import AdminUploadForm from "./AdminUploadForm"
 import AdminPlayerForm from "./AdminPlayerForm"
 import AdminBulkPlayerForm from "./AdminBulkPlayerForm"
+import AdminBulkPriceForm from "./AdminBulkPriceForm"
 import AdminCalendarForm from "./AdminCalendarForm"
 import AdminNotificationForm from "./AdminNotificationForm"
 import AdminCoachForm from "./AdminCoachForm"
 import AdminTabs from "./AdminTabs"
 import AdminDeletePlayerButton from "./AdminDeletePlayerButton"
+import AdminPlayerTable from "./AdminPlayerTable"
 import AdminDeleteMatchButton from "./AdminDeleteMatchButton"
 import AdminExcelForm from "./AdminExcelForm"
 
@@ -86,45 +88,17 @@ async function TabJugadores() {
         </p>
         <AdminBulkPlayerForm />
       </div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-        <h2 className="text-lg font-semibold text-gray-800 px-6 py-4 border-b border-gray-100">
-          Jugadores registrados ({players.length})
-        </h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">ID</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Nombre</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Posición</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">División</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Precio</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Puntos</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((p) => (
-              <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-2 text-gray-400 font-mono">{p.id}</td>
-                <td className="px-4 py-2 font-medium">{p.name}</td>
-                <td className="px-4 py-2 text-gray-500">{p.position}</td>
-                <td className="px-4 py-2">
-                  {p.division ? (
-                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">{p.division}</span>
-                  ) : (
-                    <span className="text-gray-300 text-xs">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-2 text-right font-medium text-emerald-600">${p.currentPrice}</td>
-                <td className="px-4 py-2 text-right font-semibold text-green-700">{p.totalPoints}</td>
-                <td className="px-4 py-2 text-right">
-                  <AdminDeletePlayerButton playerId={p.id} playerName={p.name} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="bg-white rounded border border-slate-200 p-6 shadow-sm">
+        <h2 className="text-lg font-light text-slate-800 mb-2 pb-2 border-b border-slate-100">Actualizar Precios Masivamente</h2>
+        <p className="text-sm text-slate-500 mb-4 font-light">
+          Archivo <code className="bg-slate-100 px-1 rounded">.xlsx</code> con columnas{" "}
+          <code className="bg-slate-100 px-1 rounded text-red-600">id</code> y{" "}
+          <code className="bg-slate-100 px-1 rounded text-red-600">priceChange</code>.
+          El valor de priceChange se suma al precio actual (puede ser negativo).
+        </p>
+        <AdminBulkPriceForm />
       </div>
+      <AdminPlayerTable players={players.map(p => ({ id: p.id, name: p.name, position: p.position, division: p.division, currentPrice: p.currentPrice, totalPoints: p.totalPoints }))} />
     </div>
   )
 }
@@ -287,8 +261,8 @@ async function TabUsuarios() {
       usersResponse.data.map((u) => [
         u.id,
         [u.firstName, u.lastName].filter(Boolean).join(" ") ||
-          u.emailAddresses[0]?.emailAddress ||
-          "Usuario",
+        u.emailAddresses[0]?.emailAddress ||
+        "Usuario",
       ])
     )
   }
