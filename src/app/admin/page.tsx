@@ -16,6 +16,7 @@ import AdminDeletePlayerButton from "./AdminDeletePlayerButton"
 import AdminPlayerTable from "./AdminPlayerTable"
 import AdminDeleteMatchButton from "./AdminDeleteMatchButton"
 import AdminExcelForm from "./AdminExcelForm"
+import AdminMarketToggle from "./AdminMarketToggle"
 
 export default async function AdminPage({
   searchParams,
@@ -56,13 +57,16 @@ function TabExcel() {
 
 async function TabPuntos() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-2">Subir puntos semanales</h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Archivo Excel con columnas <code className="bg-gray-100 px-1 rounded">player_id</code> y{" "}
-        <code className="bg-gray-100 px-1 rounded">points</code>.
-      </p>
-      <AdminUploadForm />
+    <div className="space-y-6">
+      <AdminMarketToggle />
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">Subir puntos semanales</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Archivo Excel con columnas <code className="bg-gray-100 px-1 rounded">player_id</code> y{" "}
+          <code className="bg-gray-100 px-1 rounded">points</code>.
+        </p>
+        <AdminUploadForm />
+      </div>
     </div>
   )
 }

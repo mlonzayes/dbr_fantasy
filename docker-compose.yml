@@ -1,0 +1,67 @@
+services:
+  # ── PostgreSQL 17 (preparado para futura migración desde Neon) ──
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fantasy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fantasy_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-fantasy}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fantasy}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Descomentar profiles para no iniciar PG automáticamente mientras usás Neon
+    # profiles: ["local-db"]
+
+    # ── Next.js App ────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    restart: unless-stopped
+    expose:
+      - "3000"
+    volumes:
+      - uploads:/app/public/uploads
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: ${NEXT_PUBLIC_CLERK_SIGN_IN_URL:-/sign-in}
+      NEXT_PUBLIC_CLERK_SIGN_UP_URL: ${NEXT_PUBLIC_CLERK_SIGN_UP_URL:-/sign-up}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      UPLOAD_DIR: /app/public/uploads
+      NEXT_PUBLIC_UPLOAD_URL: /uploads
+      NODE_ENV: production
+    # Cuando migres a PG local, descomentá depends_on:
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
+
+    # ── Nginx (reverse proxy) ──────────────────────────────
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - uploads:/var/www/uploads:ro
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  uploads:

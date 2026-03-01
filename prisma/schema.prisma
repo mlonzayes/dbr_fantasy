@@ -49,10 +49,11 @@ model Team {
 }
 
 model TeamPlayer {
-  teamId   String
-  playerId Int
-  team     Team   @relation(fields: [teamId], references: [id])
-  player   Player @relation(fields: [playerId], references: [id])
+  teamId           String
+  playerId         Int
+  pointsAtPurchase Int    @default(0)
+  team             Team   @relation(fields: [teamId], references: [id])
+  player           Player @relation(fields: [playerId], references: [id])
   @@id([teamId, playerId])
 }
 
@@ -90,4 +91,9 @@ model NotificationRead {
   notificationId Int
   notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   @@id([userId, notificationId])
+}
+
+model AppConfig {
+  id         Int     @id @default(1)
+  marketOpen Boolean @default(false)
 }

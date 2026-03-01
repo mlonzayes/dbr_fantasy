@@ -24,8 +24,8 @@ export async function POST(req: Request) {
 
   const { name, playerIds, coachId } = await req.json()
 
-  if (!isTransferWindowOpen()) {
-    return NextResponse.json({ error: "El mercado se encuentra cerrado hasta las 19:00hs." }, { status: 403 })
+  if (!await isTransferWindowOpen()) {
+    return NextResponse.json({ error: "El mercado se encuentra cerrado." }, { status: 403 })
   }
 
   if (!playerIds || playerIds.length !== 15) {
@@ -70,7 +70,10 @@ export async function POST(req: Request) {
       userId,
       coachId: coachId ? Number(coachId) : null,
       players: {
-        create: playerIds.map((id: number) => ({ playerId: id })),
+        create: selectedPlayers.map((p: { id: number; totalPoints: number }) => ({
+          playerId: p.id,
+          pointsAtPurchase: p.totalPoints,
+        })),
       },
     },
     include: { players: { include: { player: true } }, coach: true },

@@ -1,0 +1,92 @@
+name: Deploy Fantasy App
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file from secrets
+        run: |
+          cat > .env << 'ENVEOF'
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_WEBHOOK_SECRET=${{ secrets.CLERK_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          ENVEOF
+
+      # ── Tag the current running image as backup for rollback ──
+      - name: Backup current image
+        run: |
+          CURRENT_IMAGE=$(docker compose images -q app 2>/dev/null || true)
+          if [ -n "$CURRENT_IMAGE" ]; then
+            docker tag "$CURRENT_IMAGE" fantasy-app:rollback 2>/dev/null || true
+            echo "ROLLBACK_AVAILABLE=true" >> $GITHUB_ENV
+          else
+            echo "ROLLBACK_AVAILABLE=false" >> $GITHUB_ENV
+          fi
+
+      # ── Build new image (if this fails, old container keeps running) ──
+      - name: Build new image
+        run: docker compose build --no-cache app
+
+      # ── Run database migrations ──
+      - name: Run Prisma migrations
+        run: |
+          docker compose run --rm --no-deps app sh -c \
+            "npx prisma migrate deploy 2>&1" || {
+            echo "⚠️ Migration failed — deployment aborted, current version still running."
+            exit 1
+          }
+
+      # ── Deploy (replace container with new image) ──
+      - name: Deploy new version
+        run: docker compose up -d app
+
+      # ── Health check — verify the app is responding ──
+      - name: Health check
+        run: |
+          echo "Waiting for app to start..."
+          sleep 5
+          RETRIES=10
+          for i in $(seq 1 $RETRIES); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${APP_PORT:-80}/ || echo "000")
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
+              echo "✅ App is healthy (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            echo "Attempt $i/$RETRIES — HTTP $HTTP_CODE, retrying in 5s..."
+            sleep 5
+          done
+          echo "❌ Health check failed after $RETRIES attempts"
+          exit 1
+
+      # ── Rollback if health check fails ──
+      - name: Rollback on failure
+        if: failure() && env.ROLLBACK_AVAILABLE == 'true'
+        run: |
+          echo "🔄 Rolling back to previous version..."
+          docker compose down app
+          docker tag fantasy-app:rollback $(docker compose config --images | grep app | head -1) 2>/dev/null || true
+          docker compose up -d app
+          echo "✅ Rollback complete — previous version restored."
+
+      # ── Cleanup old images ──
+      - name: Cleanup
+        if: success()
+        run: docker image prune -f

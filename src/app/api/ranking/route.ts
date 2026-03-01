@@ -28,7 +28,7 @@ export async function GET() {
     .map((team: any) => ({
       teamName: team.name,
       ownerName: userMap[team.userId] ?? "Usuario",
-      totalPoints: team.players.reduce((sum: number, tp: { player: { totalPoints: number } }) => sum + tp.player.totalPoints, 0),
+      totalPoints: team.players.reduce((sum: number, tp: any) => sum + (tp.player.totalPoints - tp.pointsAtPurchase), 0),
       userId: team.userId,
     }))
     .sort((a: any, b: any) => b.totalPoints - a.totalPoints)

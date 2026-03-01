@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (!isTransferWindowOpen()) {
+  if (!await isTransferWindowOpen()) {
     return NextResponse.json({ error: "El mercado se encuentra cerrado." }, { status: 403 })
   }
 

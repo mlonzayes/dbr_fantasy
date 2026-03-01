@@ -2,6 +2,7 @@
 // npm install --save-dev prisma dotenv
 import * as dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" }); // fallback for Prisma CLI
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({

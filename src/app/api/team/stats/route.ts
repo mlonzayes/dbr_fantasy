@@ -32,6 +32,6 @@ export async function GET() {
   return NextResponse.json({
     team,
     user: user ? { balance: user.balance } : null,
-    isLocked: !isTransferWindowOpen()
+    isLocked: !await isTransferWindowOpen()
   })
 }
